@@ -4,7 +4,6 @@ package main
 
 import (
 	"github.com/cloudwego/hertz/pkg/app/server"
-
 	handler "github.com/kiritoxkiriko/comical-tool/biz/handler"
 )
 

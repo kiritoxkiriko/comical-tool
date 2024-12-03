@@ -6,17 +6,34 @@ package short;
 option go_package = "short";
 
 import "api.proto";
+import "common/common.proto";
 
-message ShortReq {
-  string Code = 1 [(api.path) = "code"];
+message GetShortReq {
+  string code = 1 [(api.path) = "code"];
 }
 
-message ShortResp {
-  string RespBody = 1[(api.raw_body) = "resp_body"];
+message ShortReq {
+  string code = 1 [(api.body) = "code,required"];
+  string url = 2 [(api.body) = "code,required"];
+  string password = 3 [(api.body) = "password"];
+  int64 expire_at = 4 [(api.body) = "expire_at"];
+}
+
+message RevokeReq {
+  string code = 1 [(api.body) = "code,required"];
+  string password = 2 [(api.body) = "password"];
 }
 
 service ShortService {
-  rpc Short(ShortReq) returns (ShortResp) {
-    option (api.get) = "/s";
+  rpc Short(ShortReq) returns (common.EmptyResp) {
+    option (api.post) = "/s/short";
+  }
+
+  rpc Revoke(RevokeReq) returns (common.EmptyResp) {
+    option (api.post) = "/s/revoke";
+  }
+
+  rpc GetShort(GetShortReq) returns (common.EmptyResp) {
+    option (api.get) = "/s/:code";
   }
 }

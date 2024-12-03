@@ -11,7 +11,7 @@ GOMOD=$(GOCMD) mod
 
 # 项目名称和主程序入口
 BINARY_NAME=hertz-server
-MAIN_FILE=main.go
+MAIN_FILE=./*.go
 BINARY_PATH=bin/$(BINARY_NAME)
 
 # 默认目标

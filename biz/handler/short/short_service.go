@@ -7,11 +7,15 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
+
+	common "github.com/kiritoxkiriko/comical-tool/biz/model/common"
 	short "github.com/kiritoxkiriko/comical-tool/biz/model/short"
+	"github.com/kiritoxkiriko/comical-tool/pkg/cerror"
+	"github.com/kiritoxkiriko/comical-tool/pkg/util"
 )
 
 // Short .
-// @router /s [GET]
+// @router /s/short [POST]
 func Short(ctx context.Context, c *app.RequestContext) {
 	var err error
 	var req short.ShortReq
@@ -21,7 +25,43 @@ func Short(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	resp := new(short.ShortResp)
+	resp := new(common.EmptyResp)
 
 	c.JSON(consts.StatusOK, resp)
+}
+
+// Revoke .
+// @router /s/revoke [POST]
+func Revoke(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req short.RevokeReq
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		c.String(consts.StatusBadRequest, err.Error())
+		return
+	}
+
+	//resp := new(common.EmptyResp)
+
+	c.JSON(consts.StatusOK, map[string]string{
+		"code": req.Code,
+	})
+}
+
+// GetShort .
+// @router /s/:code [GET]
+func GetShort(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req short.GetShortReq
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		util.GenBaseResp(c, nil, cerror.ParamErr)
+		return
+	}
+
+	//resp := new(common.EmptyResp)
+
+	c.JSON(consts.StatusOK, map[string]string{
+		"code": req.Code,
+	})
 }

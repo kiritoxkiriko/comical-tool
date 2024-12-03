@@ -15,3 +15,18 @@ func _shortMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
+
+func _sMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _getshortMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}
+
+func _revokeMw() []app.HandlerFunc {
+	// your code...
+	return nil
+}

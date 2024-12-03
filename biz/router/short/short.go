@@ -17,5 +17,10 @@ import (
 func Register(r *server.Hertz) {
 
 	root := r.Group("/", rootMw()...)
-	root.GET("/s", append(_shortMw(), short.Short)...)
+	{
+		_s := root.Group("/s", _sMw()...)
+		_s.GET("/:code", append(_getshortMw(), short.GetShort)...)
+		_s.POST("/revoke", append(_revokeMw(), short.Revoke)...)
+		_s.POST("/short", append(_shortMw(), short.Short)...)
+	}
 }

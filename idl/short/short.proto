@@ -1,0 +1,22 @@
+// idl/short.proto
+syntax = "proto3";
+
+package short;
+
+option go_package = "short";
+
+import "api.proto";
+
+message ShortReq {
+  string Code = 1 [(api.path) = "code"];
+}
+
+message ShortResp {
+  string RespBody = 1[(api.raw_body) = "resp_body"];
+}
+
+service ShortService {
+  rpc Short(ShortReq) returns (ShortResp) {
+    option (api.get) = "/s";
+  }
+}

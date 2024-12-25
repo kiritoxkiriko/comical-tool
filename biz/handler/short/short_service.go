@@ -21,11 +21,11 @@ func Short(ctx context.Context, c *app.RequestContext) {
 	var req short.ShortReq
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		util.GenBaseResp(c, nil, cerror.ParamErr)
 		return
 	}
 
-	resp := new(common.EmptyResp)
+	resp := new(common.BaseResp)
 
 	c.JSON(consts.StatusOK, resp)
 }
@@ -37,15 +37,13 @@ func Revoke(ctx context.Context, c *app.RequestContext) {
 	var req short.RevokeReq
 	err = c.BindAndValidate(&req)
 	if err != nil {
-		c.String(consts.StatusBadRequest, err.Error())
+		util.GenBaseResp(c, nil, cerror.ParamErr)
 		return
 	}
 
-	//resp := new(common.EmptyResp)
+	resp := new(common.BaseResp)
 
-	c.JSON(consts.StatusOK, map[string]string{
-		"code": req.Code,
-	})
+	c.JSON(consts.StatusOK, resp)
 }
 
 // GetShort .
@@ -59,9 +57,7 @@ func GetShort(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	//resp := new(common.EmptyResp)
+	resp := new(common.BaseResp)
 
-	c.JSON(consts.StatusOK, map[string]string{
-		"code": req.Code,
-	})
+	c.JSON(consts.StatusOK, resp)
 }

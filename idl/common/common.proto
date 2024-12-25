@@ -6,3 +6,8 @@ option go_package = "common";
 
 message EmptyResp {
 }
+
+message BaseResp {
+  string code = 1;
+  string message = 2;
+}

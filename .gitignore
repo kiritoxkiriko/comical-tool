@@ -1,37 +1,82 @@
-*.o
-*.a
-*.so
-_obj
-_test
-*.[568vq]
-[568vq].out
-*.cgo1.go
-*.cgo2.c
-_cgo_defun.c
-_cgo_gotypes.go
-_cgo_export.*
-_testmain.go
+# Binaries for programs and plugins
 *.exe
 *.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binary, built with `go test -c`
 *.test
-*.prof
-*.rar
-*.zip
-*.gz
-*.psd
-*.bmd
-*.cfg
-*.pptx
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
 *.log
-*nohup.out
-*settings.pyc
+logs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Config files with sensitive data
+config.local.yaml
+config.prod.yaml
+*.local.yml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Redis dump files
+dump.rdb
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Build artifacts
+build/
+target/
+
+# Hertz specific
+dumped_hertz_remote_config.json
+.hz
+
+# JetBrains IDEs
+*.iml
+*.ipr
+*.iws
+
+# Vim
+*.swp
+*.swo
+
+# Sublime Text
 *.sublime-project
 *.sublime-workspace
-!.gitkeep
-.DS_Store
-/.idea
-/.vscode
-/output
-*.local.yml
-dumped_hertz_remote_config.json
-		  

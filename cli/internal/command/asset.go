@@ -2,6 +2,7 @@ package command
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -18,6 +19,7 @@ func newFileCommand(state *appState) *cobra.Command {
 	cmd := &cobra.Command{Use: "file", Short: "Manage temporary files"}
 	cmd.AddCommand(newAssetUpload(state, "upload", "/api/files"))
 	cmd.AddCommand(newAssetList(state, "list", "/api/files"))
+	cmd.AddCommand(newFileDownload(state))
 	cmd.AddCommand(newAssetDelete(state, "delete", "/api/files/"))
 	return cmd
 }
@@ -74,4 +76,22 @@ func newAssetDelete(state *appState, use string, path string) *cobra.Command {
 			return printJSON(data)
 		},
 	}
+}
+
+func newFileDownload(state *appState) *cobra.Command {
+	var output string
+	cmd := &cobra.Command{
+		Use:   "download <id>",
+		Short: "Download a temporary file",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			target := output
+			if target == "" {
+				target = filepath.Base(args[0])
+			}
+			return state.client().Download("/api/assets/"+args[0], target)
+		},
+	}
+	cmd.Flags().StringVarP(&output, "output", "o", "", "output file path")
+	return cmd
 }

@@ -81,6 +81,39 @@ func (c *Client) Get(path string, query url.Values) ([]byte, error) {
 	return c.do(req)
 }
 
+func (c *Client) Download(path string, outputPath string) error {
+	req, err := http.NewRequest(http.MethodGet, c.BaseURL+path, nil)
+	if err != nil {
+		return err
+	}
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	if resp.StatusCode >= 400 {
+		data, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return readErr
+		}
+		return fmt.Errorf("%s: %s", resp.Status, strings.TrimSpace(string(data)))
+	}
+	file, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+	_, err = io.Copy(file, resp.Body)
+	return err
+}
+
 func (c *Client) do(req *http.Request) ([]byte, error) {
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)

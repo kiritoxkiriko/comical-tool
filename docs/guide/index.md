@@ -43,6 +43,7 @@ comical-cli short create --url https://example.com
 comical-cli image upload --file ./image.png --link
 comical-cli clip put --content "hello" --ttl 1h
 comical-cli file upload --file ./archive.zip --ttl 168h
+comical-cli file download <asset-id> --output ./archive.zip
 ```
 
 ## Cloudflare

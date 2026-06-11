@@ -41,6 +41,7 @@ Server defaults to SQLite and local object storage. Redis is included in
 cd cli
 go run ./cmd/comical-cli short create --url https://example.com
 go run ./cmd/comical-cli clip put --content hello --link
+go run ./cmd/comical-cli file download <asset-id> --output ./download.bin
 ```
 
 ## Short Link Domains

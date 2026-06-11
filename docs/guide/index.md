@@ -17,6 +17,19 @@ docker compose -f deploy/docker-compose.yml up --build
 - `POST /api/files`
 - `GET /api/files`
 
+Expired or revoked resources return `410 Gone`. Invalid input, including uploads
+larger than the configured module limit, returns `400 Bad Request`.
+
+## Configuration
+
+Self-hosted config is TOML. The server applies `server.max_body_bytes` as the
+global request body limit, then enforces module limits:
+
+- `modules.image_hosting.max_bytes` for `POST /api/images`.
+- `modules.file_stash.max_bytes` for `POST /api/files`.
+
+See `deploy/config.example.toml` for the default values.
+
 ## CLI
 
 ```bash

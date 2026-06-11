@@ -136,6 +136,9 @@ func (s *Service) UploadAsset(ctx context.Context, kind domain.ResourceType, up 
 	if up.Size <= 0 {
 		return domain.Asset{}, apperror.New(apperror.CodeBadRequest, "empty upload")
 	}
+	if limit := s.maxAssetBytes(kind); limit > 0 && up.Size > limit {
+		return domain.Asset{}, apperror.New(apperror.CodeBadRequest, "upload exceeds max bytes")
+	}
 	asset, err := s.newAsset(ctx, kind, up)
 	if err != nil {
 		return domain.Asset{}, err
@@ -147,6 +150,17 @@ func (s *Service) UploadAsset(ctx context.Context, kind domain.ResourceType, up 
 	}
 	asset.Size = int64(buf.Len())
 	return asset, s.repo.CreateAsset(ctx, asset)
+}
+
+func (s *Service) maxAssetBytes(kind domain.ResourceType) int64 {
+	switch kind {
+	case domain.ResourceImage:
+		return s.cfg.Modules.ImageHosting.MaxBytes
+	case domain.ResourceFile:
+		return s.cfg.Modules.FileStash.MaxBytes
+	default:
+		return 0
+	}
 }
 
 func (s *Service) ListAssets(ctx context.Context, kind domain.ResourceType) ([]domain.Asset, error) {

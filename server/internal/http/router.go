@@ -28,7 +28,7 @@ func New(cfg config.Config, svc *service.Service) *Server {
 }
 
 func (s *Server) Run() {
-	h := server.Default(server.WithHostPorts(s.cfg.Server.Addr))
+	h := s.engine()
 	h.Use(cors)
 	h.OPTIONS("/*path", options)
 	h.GET("/healthz", s.health)
@@ -49,6 +49,16 @@ func (s *Server) Run() {
 	api.DELETE("/files/:id", s.deleteAsset)
 	api.POST("/admin/cleanup", s.cleanup)
 	h.Spin()
+}
+
+func (s *Server) engine() *server.Hertz {
+	if s.cfg.Server.MaxBodyBytes <= 0 {
+		return server.Default(server.WithHostPorts(s.cfg.Server.Addr))
+	}
+	return server.Default(
+		server.WithHostPorts(s.cfg.Server.Addr),
+		server.WithMaxRequestBodySize(int(s.cfg.Server.MaxBodyBytes)),
+	)
 }
 
 func cors(ctx context.Context, c *app.RequestContext) {
@@ -250,6 +260,8 @@ func statusCode(code apperror.Code) int {
 		return stdhttp.StatusForbidden
 	case apperror.CodeConflict:
 		return stdhttp.StatusConflict
+	case apperror.CodeExpired, apperror.CodeRevoked:
+		return stdhttp.StatusGone
 	default:
 		return stdhttp.StatusInternalServerError
 	}

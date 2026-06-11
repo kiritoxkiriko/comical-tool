@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	stdhttp "net/http"
+	"strings"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -201,6 +202,10 @@ func (s *Server) deleteAsset(ctx context.Context, c *app.RequestContext) {
 }
 
 func (s *Server) cleanup(ctx context.Context, c *app.RequestContext) {
+	if !adminAuthorized(s.cfg, string(c.Request.Header.Peek("Authorization"))) {
+		writeError(c, apperror.New(apperror.CodeUnauthorized, "invalid admin token"))
+		return
+	}
 	result, err := s.svc.CleanupExpired(ctx)
 	writeResult(c, result, err)
 }
@@ -256,7 +261,9 @@ func statusCode(code apperror.Code) int {
 		return stdhttp.StatusBadRequest
 	case apperror.CodeNotFound:
 		return stdhttp.StatusNotFound
-	case apperror.CodeForbidden, apperror.CodeUnauthorized:
+	case apperror.CodeUnauthorized:
+		return stdhttp.StatusUnauthorized
+	case apperror.CodeForbidden:
 		return stdhttp.StatusForbidden
 	case apperror.CodeConflict:
 		return stdhttp.StatusConflict
@@ -265,4 +272,12 @@ func statusCode(code apperror.Code) int {
 	default:
 		return stdhttp.StatusInternalServerError
 	}
+}
+
+func adminAuthorized(cfg config.Config, header string) bool {
+	token := strings.TrimSpace(cfg.Security.AdminToken)
+	if token == "" {
+		return false
+	}
+	return strings.TrimSpace(header) == "Bearer "+token
 }

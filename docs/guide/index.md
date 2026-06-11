@@ -30,6 +30,9 @@ global request body limit, then enforces module limits:
 
 See `deploy/config.example.toml` for the default values.
 
+Administrative HTTP APIs require `Authorization: Bearer <security.admin_token>`.
+For CLI usage, pass `--token` or set `COMICAL_ADMIN_TOKEN`.
+
 ## CLI
 
 ```bash

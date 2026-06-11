@@ -19,7 +19,7 @@ export default {
       if (url.pathname === "/api/files" && request.method === "GET") return listAssets(env, "file");
       if (url.pathname.startsWith("/api/files/") && request.method === "DELETE") return deleteAsset(url, env);
       if (url.pathname.startsWith("/api/assets/") && request.method === "GET") return getAsset(url, env);
-      if (url.pathname === "/api/admin/cleanup" && request.method === "POST") return adminCleanup(env);
+      if (url.pathname === "/api/admin/cleanup" && request.method === "POST") return adminCleanup(request, env);
       if (request.method === "GET" && url.pathname.length > 1) return redirectShort(url, env);
       return json({ error: "not_found", message: "route not found" }, 404);
     } catch (error) {
@@ -157,7 +157,8 @@ async function cleanExpired(env: Env): Promise<void> {
     .run();
 }
 
-async function adminCleanup(env: Env): Promise<Response> {
+async function adminCleanup(request: Request, env: Env): Promise<Response> {
+  if (!adminAuthorized(request, env)) return json({ error: "unauthorized", message: "invalid admin token" }, 401);
   await cleanExpired(env);
   return json({ cleanup: true });
 }
@@ -207,6 +208,12 @@ function mappedURLs(env: Env, slug: string): Record<string, string> {
 function shortDomainMappings(env: Env): Record<string, string> {
   if (!env.SHORT_DOMAIN_MAPPINGS) return {};
   return JSON.parse(env.SHORT_DOMAIN_MAPPINGS) as Record<string, string>;
+}
+
+function adminAuthorized(request: Request, env: Env): boolean {
+  const token = (env as Env & { ADMIN_TOKEN?: string }).ADMIN_TOKEN?.trim();
+  if (!token) return false;
+  return request.headers.get("authorization")?.trim() === `Bearer ${token}`;
 }
 
 async function hashPassword(password: string): Promise<string> {

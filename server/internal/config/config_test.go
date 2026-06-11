@@ -13,6 +13,9 @@ func TestLoadExampleConfig(t *testing.T) {
 	if !cfg.Cleanup.Enabled || cfg.Cleanup.Interval == 0 {
 		t.Fatal("expected cleanup job config")
 	}
+	if cfg.Cache.Driver != "redis" || cfg.Cache.DSN == "" {
+		t.Fatalf("expected redis cache config, got %+v", cfg.Cache)
+	}
 	got := cfg.Modules.ShortLink.DomainMappings["s.tool.sqlboy.me"]
 	if got != "https://tool.sqlboy.me/short" {
 		t.Fatalf("unexpected domain mapping: %q", got)

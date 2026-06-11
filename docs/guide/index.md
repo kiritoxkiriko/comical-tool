@@ -36,6 +36,12 @@ For CLI usage, pass `--token` or set `COMICAL_ADMIN_TOKEN`.
 Self-hosted cleanup runs automatically when `cleanup.enabled = true`. The
 default interval is `30m`; set `cleanup.interval` in TOML to change it.
 
+Cache config uses `[cache]`. The self-hosted server opens and pings the cache at
+startup:
+
+- `driver = "redis"` with `dsn = "redis://redis:6379/0"` for Docker/local Redis.
+- `driver = "memory"` for process-local cache during isolated development.
+
 ## CLI
 
 ```bash

@@ -32,8 +32,9 @@ Start self-hosted dependencies and apps:
 docker compose -f deploy/docker-compose.yml up --build
 ```
 
-Server defaults to SQLite and local object storage. Redis is included in
-`docker-compose.yml` for cache-compatible development.
+Server defaults to SQLite, Redis-backed cache, and local object storage. Redis is
+included in `docker-compose.yml` for cache-compatible development; use
+`cache.driver = "memory"` for isolated single-process development.
 
 ## CLI
 

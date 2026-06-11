@@ -13,3 +13,6 @@ repository implementations, and storage adapters belong in `server/internal`.
 The Hertz HTTP layer follows the `biz` layout: `server/internal/biz/router`
 registers routes, `server/internal/biz/handler` contains handlers, and
 `server/internal/biz/middleware` contains Hertz middleware.
+Cache runtime code belongs in `server/internal/cache`; the default self-hosted
+configuration opens Redis at startup and can fall back to the memory driver for
+isolated development.

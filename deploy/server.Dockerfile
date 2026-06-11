@@ -5,12 +5,14 @@ COPY go.work ./
 COPY server/go.mod server/go.sum ./server/
 RUN cd server && GOWORK=off go mod download
 COPY server ./server
+RUN mkdir -p /tmp/comical-data/objects
 RUN cd server && GOWORK=off CGO_ENABLED=0 go build -o /out/comical-tool ./cmd/comical-tool
 
 FROM gcr.io/distroless/base-debian12:nonroot
 
 WORKDIR /app
-COPY --from=build /out/comical-tool /app/comical-tool
+COPY --from=build --chown=nonroot:nonroot /tmp/comical-data /data
+COPY --from=build --chown=nonroot:nonroot /out/comical-tool /app/comical-tool
 COPY deploy/config.example.toml /app/config.toml
 EXPOSE 8080
 ENTRYPOINT ["/app/comical-tool", "-config", "/app/config.toml"]

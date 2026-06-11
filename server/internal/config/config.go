@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Cache    CacheConfig    `mapstructure:"cache"`
 	Cleanup  CleanupConfig  `mapstructure:"cleanup"`
 	Storage  StorageConfig  `mapstructure:"storage"`
 	Security SecurityConfig `mapstructure:"security"`
@@ -23,6 +24,11 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
+	Driver string `mapstructure:"driver"`
+	DSN    string `mapstructure:"dsn"`
+}
+
+type CacheConfig struct {
 	Driver string `mapstructure:"driver"`
 	DSN    string `mapstructure:"dsn"`
 }
@@ -94,6 +100,10 @@ func defaults() Config {
 		Database: DatabaseConfig{
 			Driver: "sqlite",
 			DSN:    "file:comical.db?_foreign_keys=on",
+		},
+		Cache: CacheConfig{
+			Driver: "redis",
+			DSN:    "redis://localhost:6379/0",
 		},
 		Cleanup: CleanupConfig{Enabled: true, Interval: 30 * time.Minute},
 		Storage: StorageConfig{Driver: "local", LocalDir: "./data/objects"},

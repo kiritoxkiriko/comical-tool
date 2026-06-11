@@ -1,13 +1,13 @@
 # comical-tool Harness
 
-This file is the repeatable local harness for validation, release checks, and manual Cloudflare deployment. Keep it in sync with `Makefile`, package scripts, and deployment docs.
+This file is the repeatable local harness for validation and release checks. Keep it in sync with `Makefile`, package scripts, and deployment docs.
 
 ## Prerequisites
 
 - Go 1.26.x.
 - Node.js and npm.
 - Docker for dependency services and compose validation.
-- Wrangler authenticated locally for manual Cloudflare deployment.
+- Wrangler authenticated locally for Cloudflare dry-runs and type generation.
 - Project npm installs use `https://registry.npmjs.org/`; keep `.npmrc` files aligned if package-lock files are regenerated.
 
 ## Quick Validation
@@ -21,7 +21,7 @@ make lint
 
 ## Full Validation
 
-Run this before push or deployment:
+Run this before push:
 
 ```bash
 make test
@@ -43,16 +43,18 @@ cd server && go test ./...
 cd web && npm run dev
 ```
 
-## Cloudflare Manual Deployment
+## Cloudflare Verification
 
-Deploy the Worker API and Web app with Wrangler-backed package scripts:
+GitHub Actions Cloudflare deployment is disabled. Agents must not deploy with Wrangler, `npm run deploy`, or equivalent commands unless the user explicitly asks for deployment in the current turn.
+
+Use dry-runs and builds for validation:
 
 ```bash
-cd worker && npm run deploy
-cd web && npm run deploy
+make worker-dry-run
+make web-build
 ```
 
-After deploy, smoke-check:
+If the user explicitly requests a deployment, deploy manually and then smoke-check:
 
 ```bash
 curl -I https://tool.sqlboy.me

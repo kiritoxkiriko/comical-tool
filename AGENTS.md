@@ -68,8 +68,11 @@ This project has project-scoped Cloudflare skills installed under `.agents/skill
 
 Keep Cloudflare setup project-scoped:
 
+- GitHub Actions Cloudflare deployment is intentionally disabled.
 - Do not install Cloudflare skills globally unless the user explicitly asks.
 - Do not run `codex mcp add ...` without confirmation; it writes to the user-level Codex config.
+- Do not run `wrangler deploy`, `npm run deploy` under `web/` or `worker/`, or equivalent Cloudflare deployment commands unless the user explicitly asks for deployment in the current turn.
+- Cloudflare dry-runs, type generation, builds, and local verification are allowed when they are needed to validate a change.
 - Use `.codex/cloudflare-mcp.toml` as this project's local MCP config snippet.
 - If Cloudflare MCP login is needed, confirm that the user wants to use Cloudflare MCP for this project first.
 

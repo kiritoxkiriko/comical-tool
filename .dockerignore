@@ -1,0 +1,12 @@
+.git
+.idea
+log
+**/*.log
+**/node_modules
+**/.next
+**/.open-next
+**/.wrangler
+docs/.vitepress/dist
+server/comical.db
+server/data
+data

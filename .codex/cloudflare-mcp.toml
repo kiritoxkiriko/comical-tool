@@ -1,0 +1,21 @@
+# Cloudflare MCP server config for this project.
+# Source: https://developers.cloudflare.com/agent-setup/prompt.md
+#
+# Codex currently persists MCP servers in ~/.codex/config.toml. Keep this file
+# project-local; copy or pass these entries explicitly only when working on this
+# repository.
+
+[mcp_servers.cloudflare]
+url = "https://mcp.cloudflare.com/mcp"
+
+[mcp_servers.cloudflare-docs]
+url = "https://docs.mcp.cloudflare.com/mcp"
+
+[mcp_servers.cloudflare-bindings]
+url = "https://bindings.mcp.cloudflare.com/mcp"
+
+[mcp_servers.cloudflare-builds]
+url = "https://builds.mcp.cloudflare.com/mcp"
+
+[mcp_servers.cloudflare-observability]
+url = "https://observability.mcp.cloudflare.com/mcp"

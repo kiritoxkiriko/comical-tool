@@ -72,7 +72,7 @@ Required repository variable:
 - `NEXT_PUBLIC_API_BASE_URL` defaults to `https://tool.sqlboy.me`
 
 Create Cloudflare D1, R2, and KV resources before production deployment and
-replace placeholder binding IDs in `worker/wrangler.jsonc`.
+verify the binding IDs in `worker/wrangler.jsonc`.
 
 ## Documentation
 
@@ -81,3 +81,8 @@ cd docs
 npm install
 npm run dev
 ```
+
+Docs entry points:
+
+- `docs/guide/index.md` for quick start, APIs, CLI, and migrations.
+- `docs/cloudflare.md` for manual Wrangler deployment and Cloudflare runtime differences.

@@ -32,3 +32,15 @@ Deploy the API Worker from `worker/` and the Web UI from `web/`.
 
 Before production deployment, create D1, R2, and KV resources and update
 `worker/wrangler.jsonc`.
+
+See [Cloudflare Deployment](../cloudflare.md) for manual Wrangler deployment,
+runtime differences, and smoke checks.
+
+## Migrations
+
+Migration directories:
+
+- `migrations/sqlite` for local default self-hosting.
+- `migrations/postgres` for PostgreSQL self-hosting.
+- `migrations/mysql` for MySQL self-hosting.
+- `migrations/d1` for Cloudflare Worker metadata.

@@ -7,6 +7,7 @@ import (
 
 	"github.com/kiritoxkiriko/comical-tool/server/internal/config"
 	apihttp "github.com/kiritoxkiriko/comical-tool/server/internal/http"
+	"github.com/kiritoxkiriko/comical-tool/server/internal/job"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/repository"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/service"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/storage"
@@ -31,6 +32,10 @@ func main() {
 		log.Fatal(err)
 	}
 	store := storage.NewLocal(cfg.Storage.LocalDir)
-	server := apihttp.New(cfg, service.New(cfg, repo, store))
+	svc := service.New(cfg, repo, store)
+	if cfg.Cleanup.Enabled {
+		job.StartCleanup(context.Background(), cfg.Cleanup.Interval, svc, log.Default())
+	}
+	server := apihttp.New(cfg, svc)
 	server.Run()
 }

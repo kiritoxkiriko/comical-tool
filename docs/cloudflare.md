@@ -65,7 +65,8 @@ areas:
 - Clipboard records live in KV instead of the relational database.
 - Uploaded object bytes live in R2 instead of local storage.
 - D1 stores API metadata using integer epoch timestamps.
-- Cleanup runs from Worker cron instead of a self-hosted background job.
+- Cleanup runs from Worker cron in Cloudflare and from `server/internal/job`
+  when self-hosted.
 - Hertz is not run inside Workers; `worker/` is a Cloudflare-specific adapter.
 
 Keep API paths and JSON shapes aligned with the self-hosted server. When behavior

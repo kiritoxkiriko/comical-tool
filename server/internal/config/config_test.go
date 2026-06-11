@@ -10,6 +10,9 @@ func TestLoadExampleConfig(t *testing.T) {
 	if cfg.Modules.ShortLink.DefaultTTL == 0 {
 		t.Fatal("expected short link default ttl")
 	}
+	if !cfg.Cleanup.Enabled || cfg.Cleanup.Interval == 0 {
+		t.Fatal("expected cleanup job config")
+	}
 	got := cfg.Modules.ShortLink.DomainMappings["s.tool.sqlboy.me"]
 	if got != "https://tool.sqlboy.me/short" {
 		t.Fatalf("unexpected domain mapping: %q", got)

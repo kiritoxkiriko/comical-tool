@@ -33,6 +33,9 @@ See `deploy/config.example.toml` for the default values.
 Administrative HTTP APIs require `Authorization: Bearer <security.admin_token>`.
 For CLI usage, pass `--token` or set `COMICAL_ADMIN_TOKEN`.
 
+Self-hosted cleanup runs automatically when `cleanup.enabled = true`. The
+default interval is `30m`; set `cleanup.interval` in TOML to change it.
+
 ## CLI
 
 ```bash

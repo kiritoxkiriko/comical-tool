@@ -11,6 +11,10 @@ dsn = "file:/data/comical.db?_foreign_keys=on"
 driver = "redis"
 dsn = "redis://redis:6379/0"
 
+[cleanup]
+enabled = true
+interval = "30m"
+
 [storage]
 driver = "local"
 local_dir = "/data/objects"

@@ -40,7 +40,10 @@ func main() {
 	if err := repo.Migrate(ctx); err != nil {
 		log.Fatal(err)
 	}
-	store := storage.NewLocal(cfg.Storage.LocalDir)
+	store, err := storage.Open(ctx, cfg.Storage)
+	if err != nil {
+		log.Fatal(err)
+	}
 	svc := service.New(cfg, repo, store)
 	if cfg.Cleanup.Enabled {
 		job.StartCleanup(ctx, cfg.Cleanup.Interval, svc, log.Default())

@@ -33,8 +33,8 @@ docker compose -f deploy/docker-compose.yml up --build
 ```
 
 Server defaults to SQLite, Redis-backed cache, and local object storage. Redis is
-included in `docker-compose.yml` for cache-compatible development; use
-`cache.driver = "memory"` for isolated single-process development.
+included in `docker-compose.yml` for cache-compatible development. Storage can
+use either `storage.driver = "local"` or `storage.driver = "s3"`.
 
 ## CLI
 

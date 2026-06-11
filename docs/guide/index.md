@@ -42,6 +42,13 @@ startup:
 - `driver = "redis"` with `dsn = "redis://redis:6379/0"` for Docker/local Redis.
 - `driver = "memory"` for process-local cache during isolated development.
 
+Storage config uses `[storage]`:
+
+- `driver = "local"` with `local_dir` for the default filesystem object store.
+- `driver = "s3"` with `s3_endpoint`, `s3_region`, `s3_bucket`,
+  `s3_access_key_id`, `s3_secret_access_key`, and optional
+  `s3_use_path_style = true` for S3-compatible providers.
+
 ## CLI
 
 ```bash

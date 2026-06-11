@@ -18,6 +18,14 @@ interval = "30m"
 [storage]
 driver = "local"
 local_dir = "/data/objects"
+# For S3-compatible storage, set:
+# driver = "s3"
+# s3_endpoint = "https://s3.example.com"
+# s3_region = "auto"
+# s3_bucket = "comical-tool"
+# s3_access_key_id = "change-me"
+# s3_secret_access_key = "change-me"
+# s3_use_path_style = true
 
 [security]
 admin_token = "change-me"

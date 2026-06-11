@@ -16,3 +16,5 @@ registers routes, `server/internal/biz/handler` contains handlers, and
 Cache runtime code belongs in `server/internal/cache`; the default self-hosted
 configuration opens Redis at startup and can fall back to the memory driver for
 isolated development.
+Object storage runtime code belongs in `server/internal/storage`; local and
+S3-compatible providers share the same service-facing interface.

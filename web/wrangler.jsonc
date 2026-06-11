@@ -4,9 +4,7 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-06-11",
   "compatibility_flags": ["nodejs_compat"],
-  "routes": [
-    { "pattern": "tool.sqlboy.me/*", "zone_name": "sqlboy.me" }
-  ],
+  "routes": [{ "pattern": "tool.sqlboy.me/*", "zone_name": "sqlboy.me" }],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

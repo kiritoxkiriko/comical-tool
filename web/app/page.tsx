@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Clipboard, FileUp, ImageUp, Link2, Loader2, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +31,14 @@ export default function Home() {
       <div className="absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_20%_20%,#ffd64d_0,#ffd64d_24%,transparent_25%),linear-gradient(120deg,#fff7df,#ffe9ec_45%,#eefbf6)]" />
       <div className="relative mx-auto max-w-6xl px-4 py-6">
         <header className="flex items-center gap-3">
-          <img src="/logo.png" alt="comical-tool" className="h-11 w-11 rounded-xl border border-ink/10 bg-white object-cover shadow-sm" />
+          <Image
+            src="/logo.png"
+            alt="comical-tool"
+            width={44}
+            height={44}
+            className="h-11 w-11 rounded-xl border border-ink/10 bg-white object-cover shadow-sm"
+            priority
+          />
           <div>
             <h1 className="text-2xl font-black tracking-normal">comical-tool</h1>
             <p className="text-sm text-ink/60">短期资源工具台</p>
@@ -69,7 +77,13 @@ export default function Home() {
                       >
                         <ToolForm tab={item.value} setResult={setResult} setLoading={setLoading} />
                         <aside className="hidden rounded-xl bg-comicYellow/25 p-4 md:block">
-                          <img src={item.image} alt="" className="mx-auto h-32 w-32 rounded-xl object-contain" />
+                          <Image
+                            src={item.image}
+                            alt=""
+                            width={128}
+                            height={128}
+                            className="mx-auto h-32 w-32 rounded-xl object-contain"
+                          />
                           <p className="mt-4 text-sm font-medium text-ink/60">{caption(item.value)}</p>
                         </aside>
                       </motion.div>
@@ -87,11 +101,7 @@ export default function Home() {
   );
 }
 
-function ToolForm(props: {
-  tab: Tab;
-  setResult: (value: string) => void;
-  setLoading: (value: boolean) => void;
-}) {
+function ToolForm(props: { tab: Tab; setResult: (value: string) => void; setLoading: (value: boolean) => void }) {
   if (props.tab === "short") return <ShortForm {...props} />;
   if (props.tab === "clip") return <ClipForm {...props} />;
   return <UploadForm kind={props.tab} {...props} />;
@@ -102,7 +112,12 @@ function ShortForm({ setResult, setLoading }: FormProps) {
   const [slug, setSlug] = useState("");
   const [ttl, setTTL] = useState("168h");
   return (
-    <form onSubmit={(event) => submitJSON(event, "/api/short-links", { target_url: target, custom_slug: slug, ttl }, setResult, setLoading)} className="grid gap-4">
+    <form
+      onSubmit={(event) =>
+        submitJSON(event, "/api/short-links", { target_url: target, custom_slug: slug, ttl }, setResult, setLoading)
+      }
+      className="grid gap-4"
+    >
       <SectionTitle title="生成短链接" desc="支持自定义 slug、过期时间和独立短域映射。" />
       <Input value={target} onChange={(event) => setTarget(event.target.value)} placeholder="https://example.com" />
       <div className="grid gap-3 sm:grid-cols-2">
@@ -120,7 +135,18 @@ function ClipForm({ setResult, setLoading }: FormProps) {
   const [ttl, setTTL] = useState("1h");
   const [maxVisits, setMaxVisits] = useState("5");
   return (
-    <form onSubmit={(event) => submitJSON(event, "/api/clip", { content, password, ttl, max_visits: Number(maxVisits), link: true }, setResult, setLoading)} className="grid gap-4">
+    <form
+      onSubmit={(event) =>
+        submitJSON(
+          event,
+          "/api/clip",
+          { content, password, ttl, max_visits: Number(maxVisits), link: true },
+          setResult,
+          setLoading
+        )
+      }
+      className="grid gap-4"
+    >
       <SectionTitle title="临时剪贴板" desc="适合口令分享、少次读取和短时效内容。" />
       <Textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="粘贴临时文本" />
       <div className="grid gap-3 sm:grid-cols-3">
@@ -155,7 +181,7 @@ function ResultPanel({ loading, result }: { loading: boolean; result: string }) 
       <pre className="min-h-80 overflow-auto whitespace-pre-wrap rounded-xl bg-black/25 p-4 text-sm leading-6 text-[#fff2b8]">
         {result}
       </pre>
-      <img src="/huaji/ghost.png" alt="" className="ml-auto mt-4 h-20 w-20 opacity-80" />
+      <Image src="/huaji/ghost.png" alt="" width={80} height={80} className="ml-auto mt-4 h-20 w-20 opacity-80" />
     </aside>
   );
 }
@@ -169,15 +195,31 @@ function SectionTitle({ title, desc }: { title: string; desc: string }) {
   );
 }
 
-async function submitJSON(event: FormEvent, path: string, body: unknown, setResult: (value: string) => void, setLoading: (value: boolean) => void) {
+async function submitJSON(
+  event: FormEvent,
+  path: string,
+  body: unknown,
+  setResult: (value: string) => void,
+  setLoading: (value: boolean) => void
+) {
   event.preventDefault();
   await run(setResult, setLoading, async () => {
-    const res = await fetch(apiBase + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch(apiBase + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
     return res.json();
   });
 }
 
-async function upload(event: FormEvent<HTMLFormElement>, kind: "image" | "file", ttl: string, setResult: (value: string) => void, setLoading: (value: boolean) => void) {
+async function upload(
+  event: FormEvent<HTMLFormElement>,
+  kind: "image" | "file",
+  ttl: string,
+  setResult: (value: string) => void,
+  setLoading: (value: boolean) => void
+) {
   event.preventDefault();
   await run(setResult, setLoading, async () => {
     const data = new FormData(event.currentTarget);
@@ -189,7 +231,11 @@ async function upload(event: FormEvent<HTMLFormElement>, kind: "image" | "file",
   });
 }
 
-async function run(setResult: (value: string) => void, setLoading: (value: boolean) => void, action: () => Promise<unknown>) {
+async function run(
+  setResult: (value: string) => void,
+  setLoading: (value: boolean) => void,
+  action: () => Promise<unknown>
+) {
   setLoading(true);
   try {
     setResult(JSON.stringify(await action(), null, 2));

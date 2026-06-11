@@ -5,12 +5,16 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "deploy": "wrangler deploy",
     "dry-run": "wrangler deploy --dry-run",
     "cf-typegen": "wrangler types"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
+    "prettier": "3.4.2",
     "typescript": "5.7.2",
     "wrangler": "^4.0.0"
   }

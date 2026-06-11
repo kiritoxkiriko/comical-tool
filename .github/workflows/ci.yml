@@ -23,11 +23,25 @@ jobs:
       - name: Test server
         run: go test ./...
         working-directory: server
+      - name: Check Go formatting
+        run: test -z "$(gofmt -l server cli)"
+      - name: Vet server
+        run: go vet ./...
+        working-directory: server
       - name: Test CLI
         run: go test ./...
         working-directory: cli
+      - name: Vet CLI
+        run: go vet ./...
+        working-directory: cli
       - name: Install web dependencies
         run: npm ci
+        working-directory: web
+      - name: Lint web
+        run: npm run lint
+        working-directory: web
+      - name: Check web formatting
+        run: npm run format:check
         working-directory: web
       - name: Typecheck web
         run: npm run test
@@ -40,6 +54,12 @@ jobs:
         working-directory: worker
       - name: Generate worker types
         run: npm run cf-typegen
+        working-directory: worker
+      - name: Lint worker
+        run: npm run lint
+        working-directory: worker
+      - name: Check worker formatting
+        run: npm run format:check
         working-directory: worker
       - name: Build worker
         run: npm run build

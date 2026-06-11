@@ -3,27 +3,28 @@ const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const meta = requestMeta(request);
     try {
-      if (url.pathname === "/healthz" || url.pathname === "/api/health") return json({ ok: true });
-      if (url.pathname === "/api/short-links" && request.method === "POST") return createShort(request, env);
+      if (url.pathname === "/healthz" || url.pathname === "/api/health") return health(meta);
+      if (url.pathname === "/api/short-links" && request.method === "POST") return createShort(request, env, meta);
       if (url.pathname.startsWith("/api/short-links/") && url.pathname.endsWith("/revoke"))
-        return revokeShort(url, env);
-      if (url.pathname.startsWith("/short/") && request.method === "GET") return redirectShort(url, env);
-      if (url.pathname === "/api/clip" && request.method === "POST") return createClip(request, env);
-      if (url.pathname.startsWith("/api/clip/") && request.method === "GET") return getClip(url, env);
-      if (url.pathname.startsWith("/api/clip/") && request.method === "DELETE") return deleteClip(url, env);
-      if (url.pathname === "/api/images" && request.method === "POST") return uploadAsset(request, env, "image");
-      if (url.pathname === "/api/images" && request.method === "GET") return listAssets(env, "image");
-      if (url.pathname.startsWith("/api/images/") && request.method === "DELETE") return deleteAsset(url, env);
-      if (url.pathname === "/api/files" && request.method === "POST") return uploadAsset(request, env, "file");
-      if (url.pathname === "/api/files" && request.method === "GET") return listAssets(env, "file");
-      if (url.pathname.startsWith("/api/files/") && request.method === "DELETE") return deleteAsset(url, env);
-      if (url.pathname.startsWith("/api/assets/") && request.method === "GET") return getAsset(url, env);
-      if (url.pathname === "/api/admin/cleanup" && request.method === "POST") return adminCleanup(request, env);
-      if (request.method === "GET" && url.pathname.length > 1) return redirectShort(url, env);
-      return json({ error: "not_found", message: "route not found" }, 404);
+        return revokeShort(url, env, meta);
+      if (url.pathname.startsWith("/short/") && request.method === "GET") return redirectShort(url, env, meta);
+      if (url.pathname === "/api/clip" && request.method === "POST") return createClip(request, env, meta);
+      if (url.pathname.startsWith("/api/clip/") && request.method === "GET") return getClip(url, env, meta);
+      if (url.pathname.startsWith("/api/clip/") && request.method === "DELETE") return deleteClip(url, env, meta);
+      if (url.pathname === "/api/images" && request.method === "POST") return uploadAsset(request, env, "image", meta);
+      if (url.pathname === "/api/images" && request.method === "GET") return listAssets(env, "image", meta);
+      if (url.pathname.startsWith("/api/images/") && request.method === "DELETE") return deleteAsset(url, env, meta);
+      if (url.pathname === "/api/files" && request.method === "POST") return uploadAsset(request, env, "file", meta);
+      if (url.pathname === "/api/files" && request.method === "GET") return listAssets(env, "file", meta);
+      if (url.pathname.startsWith("/api/files/") && request.method === "DELETE") return deleteAsset(url, env, meta);
+      if (url.pathname.startsWith("/api/assets/") && request.method === "GET") return getAsset(url, env, meta);
+      if (url.pathname === "/api/admin/cleanup" && request.method === "POST") return adminCleanup(request, env, meta);
+      if (request.method === "GET" && url.pathname.length > 1) return redirectShort(url, env, meta);
+      return json({ error: "not_found", message: "route not found" }, 404, meta);
     } catch (error) {
-      return json({ error: "internal", message: String(error) }, 500);
+      return json({ error: "internal", message: String(error) }, 500, meta);
     }
   },
 
@@ -32,44 +33,51 @@ export default {
   }
 };
 
-async function createShort(request: Request, env: Env): Promise<Response> {
+async function createShort(request: Request, env: Env, meta: RequestMeta): Promise<Response> {
   const body = (await request.json()) as ShortRequest;
   const targetURL = body.target_url?.trim() || "";
-  if (!validTargetURL(targetURL)) return json({ error: "bad_request", message: "invalid target_url" }, 400);
-  if (body.ttl && parseExpiry(body.ttl) === null) return json({ error: "bad_request", message: "invalid ttl" }, 400);
+  if (!validTargetURL(targetURL)) return json({ error: "bad_request", message: "invalid target_url" }, 400, meta);
+  if (body.ttl && parseExpiry(body.ttl) === null)
+    return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
   const slug = body.custom_slug || randomSlug();
   const expiresAt = parseExpiry(body.ttl);
   await env.DB.prepare("INSERT INTO short_links (id, slug, target_url, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
     .bind(crypto.randomUUID(), slug, targetURL, expiresAt, now())
     .run();
-  return json({
-    slug,
-    target_url: targetURL,
-    short_url: publicURL(env, `/short/${slug}`),
-    domain_urls: domainURLs(env, slug),
-    mapped_urls: mappedURLs(env, slug),
-    expires_at: expiresAt
-  });
+  return json(
+    {
+      slug,
+      target_url: targetURL,
+      short_url: publicURL(env, `/short/${slug}`),
+      domain_urls: domainURLs(env, slug),
+      mapped_urls: mappedURLs(env, slug),
+      expires_at: expiresAt
+    },
+    200,
+    meta
+  );
 }
 
-async function revokeShort(url: URL, env: Env): Promise<Response> {
+async function revokeShort(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const slug = url.pathname.split("/").at(-2);
   await env.DB.prepare("UPDATE short_links SET revoked_at = ? WHERE slug = ?").bind(now(), slug).run();
-  return json({ revoked: true });
+  return json({ revoked: true }, 200, meta);
 }
 
-async function redirectShort(url: URL, env: Env): Promise<Response> {
+async function redirectShort(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const slug = url.pathname.split("/").filter(Boolean).pop() || "";
   const row = await env.DB.prepare("SELECT target_url, expires_at, revoked_at FROM short_links WHERE slug = ?")
     .bind(slug)
     .first<ShortRow>();
-  if (!row) return json({ error: "not_found", message: "short link not found" }, 404);
+  if (!row) return json({ error: "not_found", message: "short link not found" }, 404, meta);
   if (row.revoked_at || expired(row.expires_at))
-    return json({ error: "expired", message: "short link unavailable" }, 410);
-  return Response.redirect(row.target_url, 302);
+    return json({ error: "expired", message: "short link unavailable" }, 410, meta);
+  const response = Response.redirect(row.target_url, 302);
+  response.headers.set("x-request-id", meta.requestID);
+  return response;
 }
 
-async function createClip(request: Request, env: Env): Promise<Response> {
+async function createClip(request: Request, env: Env, meta: RequestMeta): Promise<Response> {
   const body = (await request.json()) as ClipRequest;
   const id = crypto.randomUUID();
   const expiresAt = parseExpiry(body.ttl || "1h");
@@ -81,34 +89,34 @@ async function createClip(request: Request, env: Env): Promise<Response> {
     expires_at: expiresAt
   };
   await env.KV.put(`clip:${id}`, JSON.stringify(item), { expiration: expiresAt || undefined });
-  return json({ id, expires_at: expiresAt });
+  return json({ id, expires_at: expiresAt }, 200, meta);
 }
 
-async function getClip(url: URL, env: Env): Promise<Response> {
+async function getClip(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const id = url.pathname.split("/").pop() || "";
   const raw = await env.KV.get(`clip:${id}`);
-  if (!raw) return json({ error: "not_found", message: "clipboard item not found" }, 404);
+  if (!raw) return json({ error: "not_found", message: "clipboard item not found" }, 404, meta);
   const item = JSON.parse(raw) as ClipItem;
-  if (expired(item.expires_at)) return json({ error: "expired", message: "clipboard item expired" }, 410);
+  if (expired(item.expires_at)) return json({ error: "expired", message: "clipboard item expired" }, 410, meta);
   if (!(await checkPassword(item.password_hash, url.searchParams.get("password") || "")))
-    return json({ error: "forbidden", message: "invalid password" }, 403);
+    return json({ error: "forbidden", message: "invalid password" }, 403, meta);
   if (item.max_visits > 0 && item.visit_count >= item.max_visits)
-    return json({ error: "expired", message: "clipboard item exhausted" }, 410);
+    return json({ error: "expired", message: "clipboard item exhausted" }, 410, meta);
   item.visit_count += 1;
   await env.KV.put(`clip:${id}`, JSON.stringify(item), { expiration: item.expires_at || undefined });
-  return json({ id, content: item.content, visit_count: item.visit_count, expires_at: item.expires_at });
+  return json({ id, content: item.content, visit_count: item.visit_count, expires_at: item.expires_at }, 200, meta);
 }
 
-async function deleteClip(url: URL, env: Env): Promise<Response> {
+async function deleteClip(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const id = url.pathname.split("/").pop() || "";
   await env.KV.delete(`clip:${id}`);
-  return json({ deleted: true });
+  return json({ deleted: true }, 200, meta);
 }
 
-async function uploadAsset(request: Request, env: Env, kind: string): Promise<Response> {
+async function uploadAsset(request: Request, env: Env, kind: string, meta: RequestMeta): Promise<Response> {
   const form = await request.formData();
   const file = form.get("file");
-  if (!(file instanceof File)) return json({ error: "bad_request", message: "file is required" }, 400);
+  if (!(file instanceof File)) return json({ error: "bad_request", message: "file is required" }, 400, meta);
   const id = crypto.randomUUID();
   const key = `${kind}/${id}`;
   await env.BUCKET.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
@@ -118,39 +126,44 @@ async function uploadAsset(request: Request, env: Env, kind: string): Promise<Re
   )
     .bind(id, kind, file.name, file.type, file.size, key, expiresAt, now())
     .run();
-  return json({ id, kind, name: file.name, content_type: file.type, size: file.size, expires_at: expiresAt });
+  return json(
+    { id, kind, name: file.name, content_type: file.type, size: file.size, expires_at: expiresAt },
+    200,
+    meta
+  );
 }
 
-async function getAsset(url: URL, env: Env): Promise<Response> {
+async function getAsset(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const id = url.pathname.split("/").pop();
   const row = await env.DB.prepare("SELECT object_key, content_type, expires_at, deleted_at FROM assets WHERE id = ?")
     .bind(id)
     .first<AssetRow>();
-  if (!row) return json({ error: "not_found", message: "asset not found" }, 404);
-  if (row.deleted_at || expired(row.expires_at)) return json({ error: "expired", message: "asset unavailable" }, 410);
+  if (!row) return json({ error: "not_found", message: "asset not found" }, 404, meta);
+  if (row.deleted_at || expired(row.expires_at))
+    return json({ error: "expired", message: "asset unavailable" }, 410, meta);
   const object = await env.BUCKET.get(row.object_key);
-  if (!object) return json({ error: "not_found", message: "object not found" }, 404);
-  return new Response(object.body, { headers: { "content-type": row.content_type } });
+  if (!object) return json({ error: "not_found", message: "object not found" }, 404, meta);
+  return new Response(object.body, { headers: { "content-type": row.content_type, "x-request-id": meta.requestID } });
 }
 
-async function listAssets(env: Env, kind: string): Promise<Response> {
+async function listAssets(env: Env, kind: string, meta: RequestMeta): Promise<Response> {
   const result = await env.DB.prepare(
     "SELECT id, kind, name, content_type, size, short_slug, expires_at, created_at FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC"
   )
     .bind(kind)
     .all();
-  return json(result.results);
+  return json(result.results, 200, meta);
 }
 
-async function deleteAsset(url: URL, env: Env): Promise<Response> {
+async function deleteAsset(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const id = url.pathname.split("/").pop();
   const row = await env.DB.prepare("SELECT object_key FROM assets WHERE id = ?")
     .bind(id)
     .first<{ object_key: string }>();
-  if (!row) return json({ error: "not_found", message: "asset not found" }, 404);
+  if (!row) return json({ error: "not_found", message: "asset not found" }, 404, meta);
   await env.BUCKET.delete(row.object_key);
   await env.DB.prepare("UPDATE assets SET deleted_at = ? WHERE id = ?").bind(now(), id).run();
-  return json({ deleted: true });
+  return json({ deleted: true }, 200, meta);
 }
 
 async function cleanExpired(env: Env): Promise<void> {
@@ -160,14 +173,38 @@ async function cleanExpired(env: Env): Promise<void> {
     .run();
 }
 
-async function adminCleanup(request: Request, env: Env): Promise<Response> {
-  if (!adminAuthorized(request, env)) return json({ error: "unauthorized", message: "invalid admin token" }, 401);
+async function adminCleanup(request: Request, env: Env, meta: RequestMeta): Promise<Response> {
+  if (!adminAuthorized(request, env)) return json({ error: "unauthorized", message: "invalid admin token" }, 401, meta);
   await cleanExpired(env);
-  return json({ cleanup: true });
+  return json({ cleanup: true }, 200, meta);
 }
 
-function json(value: unknown, status = 200): Response {
-  return new Response(JSON.stringify(value), { status, headers: jsonHeaders });
+function json(value: unknown, status = 200, meta?: RequestMeta): Response {
+  const payload = status >= 400 ? { error: errorPayload(value, meta) } : { data: value };
+  const headers = new Headers(jsonHeaders);
+  if (meta) headers.set("x-request-id", meta.requestID);
+  return new Response(JSON.stringify(payload), { status, headers });
+}
+
+function health(meta: RequestMeta): Response {
+  const headers = new Headers(jsonHeaders);
+  headers.set("x-request-id", meta.requestID);
+  return new Response(JSON.stringify({ ok: true }), { headers });
+}
+
+function errorPayload(value: unknown, meta?: RequestMeta): { code: string; message: string; request_id?: string } {
+  if (!value || typeof value !== "object")
+    return { code: "internal", message: String(value || "request failed"), request_id: meta?.requestID };
+  const record = value as Record<string, unknown>;
+  return {
+    code: typeof record.error === "string" ? record.error : "internal",
+    message: typeof record.message === "string" ? record.message : "request failed",
+    request_id: meta?.requestID
+  };
+}
+
+function requestMeta(request: Request): RequestMeta {
+  return { requestID: request.headers.get("x-request-id")?.trim() || crypto.randomUUID() };
 }
 
 function randomSlug(): string {
@@ -243,6 +280,7 @@ type ShortRequest = { target_url: string; custom_slug?: string; ttl?: string };
 type ClipRequest = { content: string; password?: string; max_visits?: number; ttl?: string };
 type ShortRow = { target_url: string; expires_at: number | null; revoked_at: number | null };
 type AssetRow = { object_key: string; content_type: string; expires_at: number | null; deleted_at: number | null };
+type RequestMeta = { requestID: string };
 type ClipItem = {
   content: string;
   password_hash: string;

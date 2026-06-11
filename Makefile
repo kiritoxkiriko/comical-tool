@@ -1,4 +1,4 @@
-GO ?= go
+GO ?= GOTOOLCHAIN=go1.26.0 go
 GOLANGCI_LINT ?= golangci-lint
 
 .PHONY: test lint build docker-config worker-dry-run web-build

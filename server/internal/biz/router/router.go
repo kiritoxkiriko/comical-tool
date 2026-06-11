@@ -24,7 +24,7 @@ func (s *Server) Run() {
 func (s *Server) Engine() *server.Hertz {
 	h := s.newEngine()
 	routes := handler.New(s.cfg, s.svc)
-	h.Use(middleware.CORS)
+	h.Use(middleware.RequestID, middleware.CORS)
 	h.OPTIONS("/*path", middleware.Options)
 	h.GET("/healthz", routes.Health)
 	h.GET("/api/health", routes.Health)

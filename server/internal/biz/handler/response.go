@@ -7,9 +7,23 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/common/utils"
+	"github.com/kiritoxkiriko/comical-tool/server/internal/biz/middleware"
 	"github.com/kiritoxkiriko/comical-tool/server/pkg/apperror"
 )
+
+type successEnvelope struct {
+	Data any `json:"data"`
+}
+
+type errorEnvelope struct {
+	Error errorBody `json:"error"`
+}
+
+type errorBody struct {
+	Code      apperror.Code `json:"code"`
+	Message   string        `json:"message"`
+	RequestID string        `json:"request_id,omitempty"`
+}
 
 func bindJSON(c *app.RequestContext, out any) bool {
 	if err := json.Unmarshal(c.Request.Body(), out); err != nil {
@@ -31,7 +45,7 @@ func writeResult(c *app.RequestContext, value any, err error) {
 		writeError(c, err)
 		return
 	}
-	c.JSON(stdhttp.StatusOK, value)
+	c.JSON(stdhttp.StatusOK, successEnvelope{Data: value})
 }
 
 func writeError(c *app.RequestContext, err error) {
@@ -39,7 +53,23 @@ func writeError(c *app.RequestContext, err error) {
 	if !errors.As(err, &appErr) {
 		appErr = apperror.New(apperror.CodeInternal, err.Error())
 	}
-	c.JSON(statusCode(appErr.Code), utils.H{"error": appErr.Code, "message": appErr.Message})
+	c.JSON(statusCode(appErr.Code), errorEnvelope{Error: errorBody{
+		Code:      appErr.Code,
+		Message:   appErr.Message,
+		RequestID: requestID(c),
+	}})
+}
+
+func requestID(c *app.RequestContext) string {
+	value, ok := c.Get(middleware.RequestIDKey)
+	if !ok {
+		return ""
+	}
+	id, ok := value.(string)
+	if !ok {
+		return ""
+	}
+	return id
 }
 
 func statusCode(code apperror.Code) int {

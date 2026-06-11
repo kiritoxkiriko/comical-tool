@@ -26,7 +26,7 @@ export async function parseResponse<T = unknown>(res: Response): Promise<T> {
   if (!res.ok) {
     throw new Error(errorMessage(payload));
   }
-  return payload as T;
+  return unwrapData(payload) as T;
 }
 
 function parsePayload(text: string): unknown {
@@ -39,6 +39,7 @@ function parsePayload(text: string): unknown {
 }
 
 function primaryMessage(payload: unknown): string {
+  payload = unwrapData(payload);
   if (typeof payload === "string") return payload || "请求已完成。";
   if (!payload || typeof payload !== "object") return "请求已完成。";
   const value = payload as Record<string, unknown>;
@@ -52,7 +53,20 @@ function errorMessage(payload: unknown): string {
   if (typeof payload === "string") return payload || "请求失败。";
   if (!payload || typeof payload !== "object") return "请求失败。";
   const value = payload as Record<string, unknown>;
+  if (value.error && typeof value.error === "object") {
+    const error = value.error as Record<string, unknown>;
+    const message = typeof error.message === "string" ? error.message : "请求失败。";
+    const requestID = typeof error.request_id === "string" ? error.request_id : "";
+    return requestID ? `${message}（request_id: ${requestID}）` : message;
+  }
   if (typeof value.message === "string") return value.message;
   if (typeof value.error === "string") return value.error;
   return "请求失败。";
+}
+
+function unwrapData(payload: unknown): unknown {
+  if (!payload || typeof payload !== "object") return payload;
+  const value = payload as Record<string, unknown>;
+  if (!Object.hasOwn(value, "data")) return payload;
+  return value.data;
 }

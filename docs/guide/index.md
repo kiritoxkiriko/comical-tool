@@ -8,6 +8,28 @@ docker compose -f deploy/docker-compose.yml up --build
 
 ## API
 
+Business APIs return a stable JSON envelope:
+
+```json
+{
+  "data": {}
+}
+```
+
+Error responses use:
+
+```json
+{
+  "error": {
+    "code": "bad_request",
+    "message": "invalid request",
+    "request_id": "..."
+  }
+}
+```
+
+Health checks and binary asset downloads are intentionally not wrapped.
+
 - `POST /api/short-links`
 - `POST /api/short-links/:slug/revoke`
 - `POST /api/images`

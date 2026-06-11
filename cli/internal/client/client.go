@@ -101,7 +101,7 @@ func (c *Client) Download(path string, outputPath string) error {
 		if readErr != nil {
 			return readErr
 		}
-		return fmt.Errorf("%s: %s", resp.Status, strings.TrimSpace(string(data)))
+		return fmt.Errorf("%s: %s", resp.Status, responseErrorMessage(data))
 	}
 	file, err := os.Create(outputPath)
 	if err != nil {
@@ -130,7 +130,40 @@ func (c *Client) do(req *http.Request) ([]byte, error) {
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("%s: %s", resp.Status, strings.TrimSpace(string(data)))
+		return nil, fmt.Errorf("%s: %s", resp.Status, responseErrorMessage(data))
 	}
-	return data, nil
+	return unwrapData(data), nil
+}
+
+func unwrapData(data []byte) []byte {
+	var envelope struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(data, &envelope); err == nil && len(envelope.Data) > 0 {
+		return envelope.Data
+	}
+	return data
+}
+
+func responseErrorMessage(data []byte) string {
+	var envelope struct {
+		Error struct {
+			Code      string `json:"code"`
+			Message   string `json:"message"`
+			RequestID string `json:"request_id"`
+		} `json:"error"`
+		Message string `json:"message"`
+	}
+	if err := json.Unmarshal(data, &envelope); err == nil {
+		if envelope.Error.Message != "" {
+			if envelope.Error.RequestID != "" {
+				return envelope.Error.Message + " (request_id: " + envelope.Error.RequestID + ")"
+			}
+			return envelope.Error.Message
+		}
+		if envelope.Message != "" {
+			return envelope.Message
+		}
+	}
+	return strings.TrimSpace(string(data))
 }

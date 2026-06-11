@@ -101,11 +101,7 @@ function AssetActions({ kind, notify, setLoading }: ActionProps & { kind: "image
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="ghost" size="icon" title="打开资源">
-                  <a
-                    href={`${apiBase}/api/${kind === "image" ? "images" : "files"}/${asset.id}`}
-                    target="_blank"
-                    rel="noopener"
-                  >
+                  <a href={`${apiBase}/api/assets/${asset.id}`} target="_blank" rel="noopener">
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 </Button>

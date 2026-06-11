@@ -34,14 +34,17 @@ export default {
 
 async function createShort(request: Request, env: Env): Promise<Response> {
   const body = (await request.json()) as ShortRequest;
+  const targetURL = body.target_url?.trim() || "";
+  if (!validTargetURL(targetURL)) return json({ error: "bad_request", message: "invalid target_url" }, 400);
+  if (body.ttl && parseExpiry(body.ttl) === null) return json({ error: "bad_request", message: "invalid ttl" }, 400);
   const slug = body.custom_slug || randomSlug();
   const expiresAt = parseExpiry(body.ttl);
   await env.DB.prepare("INSERT INTO short_links (id, slug, target_url, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
-    .bind(crypto.randomUUID(), slug, body.target_url, expiresAt, now())
+    .bind(crypto.randomUUID(), slug, targetURL, expiresAt, now())
     .run();
   return json({
     slug,
-    target_url: body.target_url,
+    target_url: targetURL,
     short_url: publicURL(env, `/short/${slug}`),
     domain_urls: domainURLs(env, slug),
     mapped_urls: mappedURLs(env, slug),
@@ -179,6 +182,15 @@ function parseExpiry(ttl?: string): number | null {
   if (!match) return null;
   const units = { m: 60, h: 3600, d: 86400 } as const;
   return now() + Number(match[1]) * units[match[2] as keyof typeof units];
+}
+
+function validTargetURL(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function expired(timestamp: number | null): boolean {

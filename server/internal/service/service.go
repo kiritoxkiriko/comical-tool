@@ -19,7 +19,7 @@ import (
 
 type Service struct {
 	cfg   config.Config
-	repo  *repository.SQLite
+	repo  *repository.Store
 	store storage.Store
 }
 
@@ -32,7 +32,7 @@ type Upload struct {
 	Link        bool
 }
 
-func New(cfg config.Config, repo *repository.SQLite, store storage.Store) *Service {
+func New(cfg config.Config, repo *repository.Store, store storage.Store) *Service {
 	return &Service{cfg: cfg, repo: repo, store: store}
 }
 

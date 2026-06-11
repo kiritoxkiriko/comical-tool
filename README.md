@@ -34,7 +34,9 @@ docker compose -f deploy/docker-compose.yml up --build
 
 Server defaults to SQLite, Redis-backed cache, and local object storage. Redis is
 included in `docker-compose.yml` for cache-compatible development. Storage can
-use either `storage.driver = "local"` or `storage.driver = "s3"`.
+use either `storage.driver = "local"` or `storage.driver = "s3"`. The
+self-hosted server can open SQLite, PostgreSQL, or MySQL through
+`database.driver`.
 
 ## CLI
 

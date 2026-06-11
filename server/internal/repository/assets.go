@@ -15,26 +15,26 @@ type assetRow struct {
 	Size        int64          `db:"size"`
 	ObjectKey   string         `db:"object_key"`
 	ShortSlug   sql.NullString `db:"short_slug"`
-	ExpiresAt   sql.NullString `db:"expires_at"`
-	DeletedAt   sql.NullString `db:"deleted_at"`
-	CreatedAt   string         `db:"created_at"`
+	ExpiresAt   dbTime         `db:"expires_at"`
+	DeletedAt   dbTime         `db:"deleted_at"`
+	CreatedAt   dbTime         `db:"created_at"`
 }
 
-func (s *SQLite) CreateAsset(ctx context.Context, asset domain.Asset) error {
-	now := nowString()
-	_, err := s.db.ExecContext(ctx, `
+func (s *Store) CreateAsset(ctx context.Context, asset domain.Asset) error {
+	now := s.nowArg()
+	_, err := s.exec(ctx, `
 INSERT INTO assets
 (id, owner_id, kind, name, content_type, size, object_key, short_slug, expires_at, deleted_at, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		asset.ID, domain.GuestUserID, asset.Kind, asset.Name, asset.ContentType,
 		asset.Size, asset.ObjectKey, nullString(asset.ShortSlug),
-		nullableTime(asset.ExpiresAt), nullableTime(asset.DeletedAt), now, now)
+		s.timeArg(nullableTime(asset.ExpiresAt)), s.timeArg(nullableTime(asset.DeletedAt)), now, now)
 	return err
 }
 
-func (s *SQLite) ListAssets(ctx context.Context, kind domain.ResourceType) ([]domain.Asset, error) {
+func (s *Store) ListAssets(ctx context.Context, kind domain.ResourceType) ([]domain.Asset, error) {
 	rows := []assetRow{}
-	err := s.db.SelectContext(ctx, &rows, `
+	err := s.selectRows(ctx, &rows, `
 SELECT id, kind, name, content_type, size, object_key, short_slug, expires_at, deleted_at, created_at
 FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC`, kind)
 	if err != nil {
@@ -47,9 +47,9 @@ FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC`, kin
 	return assets, nil
 }
 
-func (s *SQLite) FindAsset(ctx context.Context, id string) (domain.Asset, error) {
+func (s *Store) FindAsset(ctx context.Context, id string) (domain.Asset, error) {
 	var row assetRow
-	err := s.db.GetContext(ctx, &row, `
+	err := s.get(ctx, &row, `
 SELECT id, kind, name, content_type, size, object_key, short_slug, expires_at, deleted_at, created_at
 FROM assets WHERE id = ?`, id)
 	if err == sql.ErrNoRows {
@@ -61,10 +61,11 @@ FROM assets WHERE id = ?`, id)
 	return row.toDomain(), nil
 }
 
-func (s *SQLite) DeleteAsset(ctx context.Context, id string) error {
-	res, err := s.db.ExecContext(ctx, `
+func (s *Store) DeleteAsset(ctx context.Context, id string) error {
+	now := s.nowArg()
+	res, err := s.exec(ctx, `
 UPDATE assets SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL`,
-		nowString(), nowString(), id)
+		now, now, id)
 	if err != nil {
 		return err
 	}

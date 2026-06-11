@@ -8,21 +8,21 @@ type CleanupResult struct {
 	ShortLinks int64 `json:"short_links"`
 }
 
-func (s *SQLite) CleanupExpired(ctx context.Context) (CleanupResult, error) {
-	now := nowString()
-	assets, err := s.db.ExecContext(ctx, `
+func (s *Store) CleanupExpired(ctx context.Context) (CleanupResult, error) {
+	now := s.nowArg()
+	assets, err := s.exec(ctx, `
 UPDATE assets SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND expires_at IS NOT NULL AND expires_at < ?`,
 		now, now, now)
 	if err != nil {
 		return CleanupResult{}, err
 	}
-	clip, err := s.db.ExecContext(ctx, `
+	clip, err := s.exec(ctx, `
 UPDATE clipboard_items SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND expires_at IS NOT NULL AND expires_at < ?`,
 		now, now, now)
 	if err != nil {
 		return CleanupResult{}, err
 	}
-	short, err := s.db.ExecContext(ctx, `
+	short, err := s.exec(ctx, `
 UPDATE short_links SET revoked_at = ?, updated_at = ? WHERE revoked_at IS NULL AND expires_at IS NOT NULL AND expires_at < ?`,
 		now, now, now)
 	if err != nil {

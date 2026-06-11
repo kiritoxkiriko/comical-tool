@@ -18,3 +18,6 @@ configuration opens Redis at startup and can fall back to the memory driver for
 isolated development.
 Object storage runtime code belongs in `server/internal/storage`; local and
 S3-compatible providers share the same service-facing interface.
+Repository runtime code belongs in `server/internal/repository`; SQLite,
+PostgreSQL, and MySQL use the same service-facing store with driver-specific
+SQL binding and migration setup.

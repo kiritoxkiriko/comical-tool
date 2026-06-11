@@ -29,6 +29,8 @@ services:
   postgres:
     image: postgres:17-alpine
     profiles: ["postgres"]
+    ports:
+      - "15432:5432"
     environment:
       POSTGRES_DB: comical
       POSTGRES_USER: comical
@@ -37,6 +39,8 @@ services:
   mysql:
     image: mysql:9
     profiles: ["mysql"]
+    ports:
+      - "13306:3306"
     environment:
       MYSQL_DATABASE: comical
       MYSQL_USER: comical

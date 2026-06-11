@@ -30,7 +30,7 @@ func main() {
 	defer func() {
 		_ = cacheStore.Close()
 	}()
-	repo, err := repository.OpenSQLite(cfg.Database.DSN)
+	repo, err := repository.Open(cfg.Database.Driver, cfg.Database.DSN)
 	if err != nil {
 		log.Fatal(err)
 	}

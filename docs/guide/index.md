@@ -33,6 +33,13 @@ See `deploy/config.example.toml` for the default values.
 Administrative HTTP APIs require `Authorization: Bearer <security.admin_token>`.
 For CLI usage, pass `--token` or set `COMICAL_ADMIN_TOKEN`.
 
+Database config uses `[database]`. The self-hosted server can open and migrate
+SQLite, PostgreSQL, and MySQL:
+
+- `driver = "sqlite"` with `dsn = "file:/data/comical.db?_foreign_keys=on"`.
+- `driver = "postgres"` with a PostgreSQL URL.
+- `driver = "mysql"` with a MySQL DSN; include `parseTime=true`.
+
 Self-hosted cleanup runs automatically when `cleanup.enabled = true`. The
 default interval is `30m`; set `cleanup.interval` in TOML to change it.
 
@@ -77,3 +84,12 @@ Migration directories:
 - `migrations/postgres` for PostgreSQL self-hosting.
 - `migrations/mysql` for MySQL self-hosting.
 - `migrations/d1` for Cloudflare Worker metadata.
+
+PostgreSQL/MySQL smoke tests are opt-in:
+
+```bash
+docker compose -f deploy/docker-compose.yml --profile postgres --profile mysql up -d postgres mysql
+COMICAL_TEST_POSTGRES_DSN='postgres://comical:comical@127.0.0.1:15432/comical?sslmode=disable' \
+COMICAL_TEST_MYSQL_DSN='comical:comical@tcp(127.0.0.1:13306)/comical?parseTime=true' \
+  go test ./server/internal/repository
+```

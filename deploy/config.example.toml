@@ -6,6 +6,12 @@ max_body_bytes = 104857600
 [database]
 driver = "sqlite"
 dsn = "file:/data/comical.db?_foreign_keys=on"
+# For PostgreSQL, set:
+# driver = "postgres"
+# dsn = "postgres://comical:comical@postgres:5432/comical?sslmode=disable"
+# For MySQL, set:
+# driver = "mysql"
+# dsn = "comical:comical@tcp(mysql:3306)/comical?parseTime=true"
 
 [cache]
 driver = "redis"

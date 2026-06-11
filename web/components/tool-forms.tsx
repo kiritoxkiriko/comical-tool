@@ -34,18 +34,18 @@ function ShortForm({ meta, notify, setLoading }: FormProps) {
       className="grid gap-5"
     >
       <SectionTitle title={meta.title} desc={meta.desc} />
-      <Field label="目标地址">
+      <Field label="目标 URL">
         <Input value={target} onChange={(event) => setTarget(event.target.value)} placeholder="https://example.com" />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="自定义 slug">
+        <Field label="自定义路径">
           <Input value={slug} onChange={(event) => setSlug(event.target.value)} placeholder="可空" />
         </Field>
         <Field label="过期时间">
           <Input value={ttl} onChange={(event) => setTTL(event.target.value)} placeholder="168h" />
         </Field>
       </div>
-      <SubmitButton>创建短链</SubmitButton>
+      <SubmitButton>生成短链接</SubmitButton>
     </form>
   );
 }
@@ -70,8 +70,12 @@ function ClipForm({ meta, notify, setLoading }: FormProps) {
       className="grid gap-5"
     >
       <SectionTitle title={meta.title} desc={meta.desc} />
-      <Field label="剪贴内容">
-        <Textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="粘贴临时文本" />
+      <Field label="文本内容">
+        <Textarea
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
+          placeholder="粘贴需要临时分享的文本"
+        />
       </Field>
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="口令">
@@ -80,11 +84,11 @@ function ClipForm({ meta, notify, setLoading }: FormProps) {
         <Field label="过期时间">
           <Input value={ttl} onChange={(event) => setTTL(event.target.value)} placeholder="1h" />
         </Field>
-        <Field label="访问次数">
+        <Field label="最多访问">
           <Input value={maxVisits} onChange={(event) => setMaxVisits(event.target.value)} placeholder="5" />
         </Field>
       </div>
-      <SubmitButton>保存剪贴板</SubmitButton>
+      <SubmitButton>保存文本</SubmitButton>
     </form>
   );
 }
@@ -125,7 +129,7 @@ function Dropzone({ kind, file, onFile }: { kind: "image" | "file"; file: File |
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       className={[
-        "group grid min-h-44 cursor-pointer place-items-center rounded-3xl border border-dashed p-6 text-center transition",
+        "group grid min-h-44 cursor-pointer place-items-center rounded-2xl border border-dashed p-6 text-center transition",
         dragging
           ? "border-comicRed bg-comicRed/5"
           : "border-ink/20 bg-[#fbfaf6] hover:border-comicRed/60 hover:bg-comicYellow/10"
@@ -145,9 +149,9 @@ function Dropzone({ kind, file, onFile }: { kind: "image" | "file"; file: File |
           <UploadCloud className="h-5 w-5 text-comicRed" />
         </span>
         <span>
-          <span className="block text-base font-black">{file ? file.name : "拖拽文件到这里"}</span>
+          <span className="block break-all text-base font-black">{file ? file.name : "拖拽到这里上传"}</span>
           <span className="mt-1 block text-sm text-ink/50">
-            {file ? `${formatBytes(file.size)}，点击可重新选择` : "或点击选择文件，上传后自动生成短期资源"}
+            {file ? `${formatBytes(file.size)}，点击可重新选择` : "也可以点击选择文件，上传后自动生成临时资源"}
           </span>
         </span>
       </span>

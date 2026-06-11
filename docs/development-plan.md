@@ -125,8 +125,10 @@ comical-tool/
 - `README.md`
 - `AGENTS.md`
 - `.gitignore`
+- `.npmrc`
 - `.editorconfig`
 - `Makefile` 或 `justfile`
+- `harness.md`
 - `go.work`
 - `deploy/docker-compose.yml`
 - `deploy/config.example.toml`
@@ -160,9 +162,11 @@ server/
     comical-tool/
       main.go
   internal/
+    biz/
+      handler/
+      middleware/
+      router/
     config/
-    http/
-    middleware/
     module/
       shortlink/
       image/
@@ -177,6 +181,8 @@ server/
     policy/
     apperror/
 ```
+
+`server/internal/biz/` 按 Hertz `hz` 的常见目录习惯组织 HTTP 层：`handler` 承载请求处理，`router` 承载路由注册，`middleware` 承载 Hertz middleware。项目仍保留顶层领域化边界，不在仓库根目录新增 `biz/`。
 
 共享纯 Go 包放在 `server/pkg/`：
 

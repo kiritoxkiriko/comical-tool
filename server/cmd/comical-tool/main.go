@@ -5,8 +5,8 @@ import (
 	"flag"
 	"log"
 
+	"github.com/kiritoxkiriko/comical-tool/server/internal/biz/router"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/config"
-	apihttp "github.com/kiritoxkiriko/comical-tool/server/internal/http"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/job"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/repository"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/service"
@@ -36,6 +36,6 @@ func main() {
 	if cfg.Cleanup.Enabled {
 		job.StartCleanup(context.Background(), cfg.Cleanup.Interval, svc, log.Default())
 	}
-	server := apihttp.New(cfg, svc)
+	server := router.New(cfg, svc)
 	server.Run()
 }

@@ -23,6 +23,8 @@ docs/           # Project docs and VitePress docs site
 deploy/         # Docker, docker-compose, wrangler, reverse proxy config
 migrations/     # sqlite/postgres/mysql migrations
 scripts/        # Local development, migration, build, and cleanup scripts
+.npmrc          # Root npm registry policy for local and CI installs
+harness.md      # Repeatable validation and deployment harness
 go.work         # Optional workspace for Go modules under server/ and cli/
 ```
 
@@ -37,6 +39,7 @@ Do not:
 ## Domain Structure
 
 - `server/` is a Go module. Use `server/cmd/comical-tool`, `server/internal`, and `server/pkg`.
+- Server HTTP code follows Hertz-style layout under `server/internal/biz`: handlers in `biz/handler`, route registration in `biz/router`, and middleware in `biz/middleware`.
 - `cli/` is a Go module. Use `cli/cmd/comical-cli` and `cli/internal`; build the command tree with Cobra.
 - `web/` is a Next.js project and follows normal Next.js/Tailwind conventions.
 - `worker/` is a Cloudflare Worker project and follows normal Workers conventions.
@@ -73,6 +76,7 @@ Keep Cloudflare setup project-scoped:
 ## Development Rules
 
 - Before changing code, read `docs/development-plan.md` and the README in the target domain directory.
+- For validation or deployment work, read `harness.md` and keep it aligned with Makefile/package script changes.
 - For shared schema, migrations, config structures, deployment files, or cross-runtime interfaces, check the impact area first.
 - For new features, add tests for `server/pkg` and `server/internal` first, then wire HTTP, Web, CLI, or Worker behavior.
 - Local development should use Docker for dependencies by default; SQLite mode must not require a database container.
@@ -82,6 +86,7 @@ Keep Cloudflare setup project-scoped:
 
 Choose verification based on the changed area:
 
+- Harness: follow `harness.md` for the repeatable command sequence.
 - Server: `cd server && go test ./...`
 - CLI: `cd cli && go test ./...`
 - Web: `cd web && npm run lint`, `npm run test`, `npm run build`

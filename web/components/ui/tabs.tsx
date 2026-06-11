@@ -19,7 +19,7 @@ function TabsTrigger({ className, ...props }: React.ComponentPropsWithoutRef<typ
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "rounded-md px-3 py-2 text-sm font-semibold text-ink/70 transition data-[state=active]:bg-ink data-[state=active]:text-white",
+        "inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-ink/70 transition data-[state=active]:bg-ink data-[state=active]:text-white",
         className
       )}
       {...props}

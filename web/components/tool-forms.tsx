@@ -3,12 +3,11 @@
 import { ArrowUpRight, UploadCloud } from "lucide-react";
 import { type DragEvent, type FormEvent, type ReactNode, useState } from "react";
 
+import { apiBase, parseResponse, runToolAction } from "@/components/tool-api";
 import type { ToastMessage, ToolMeta, ToolTab } from "@/components/tool-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export function ToolForm(props: {
   tab: ToolTab;
@@ -194,7 +193,7 @@ async function submitJSON(
   setLoading: (value: boolean) => void
 ) {
   event.preventDefault();
-  await run(notify, setLoading, async () => {
+  await runToolAction(notify, setLoading, async () => {
     const res = await fetch(apiBase + path, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -217,7 +216,7 @@ async function upload(
     notify({ kind: "error", title: "请选择文件", description: "拖拽一个文件到上传区域，或点击上传区域选择文件。" });
     return;
   }
-  await run(notify, setLoading, async () => {
+  await runToolAction(notify, setLoading, async () => {
     const data = new FormData();
     data.set("file", file);
     data.set("ttl", ttl);
@@ -226,59 +225,6 @@ async function upload(
     const res = await fetch(apiBase + path, { method: "POST", body: data });
     return parseResponse(res);
   });
-}
-
-async function run(
-  notify: (message: Omit<ToastMessage, "id">) => void,
-  setLoading: (value: boolean) => void,
-  action: () => Promise<unknown>
-) {
-  setLoading(true);
-  try {
-    const payload = await action();
-    notify({ kind: "success", title: "操作成功", description: primaryMessage(payload) });
-  } catch (error) {
-    notify({ kind: "error", title: "操作失败", description: error instanceof Error ? error.message : String(error) });
-  } finally {
-    setLoading(false);
-  }
-}
-
-async function parseResponse(res: Response): Promise<unknown> {
-  const text = await res.text();
-  const payload = parsePayload(text);
-  if (!res.ok) {
-    throw new Error(errorMessage(payload));
-  }
-  return payload;
-}
-
-function parsePayload(text: string): unknown {
-  if (!text) return {};
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-}
-
-function primaryMessage(payload: unknown): string {
-  if (typeof payload === "string") return payload || "请求已完成。";
-  if (!payload || typeof payload !== "object") return "请求已完成。";
-  const value = payload as Record<string, unknown>;
-  const primary = value.short_url ?? value.id ?? value.slug ?? value.deleted ?? value.revoked;
-  if (typeof primary === "string") return primary;
-  if (typeof primary === "boolean") return primary ? "已完成。" : "请求已完成。";
-  return "请求已完成。";
-}
-
-function errorMessage(payload: unknown): string {
-  if (typeof payload === "string") return payload || "请求失败。";
-  if (!payload || typeof payload !== "object") return "请求失败。";
-  const value = payload as Record<string, unknown>;
-  if (typeof value.message === "string") return value.message;
-  if (typeof value.error === "string") return value.error;
-  return "请求失败。";
 }
 
 function formatBytes(size: number): string {

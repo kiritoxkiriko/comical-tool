@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 import { ToastStack } from "@/components/toast-stack";
+import { ToolActions } from "@/components/tool-actions";
 import { ToolForm } from "@/components/tool-forms";
 import type { ToastMessage, ToolMeta, ToolTab } from "@/components/tool-types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -194,7 +195,7 @@ function ToolBody(props: {
 }) {
   return (
     <div className="relative mt-7 flex-1">
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {modules.map((item) => (
           <TabsContent key={item.value} value={item.value} forceMount hidden={props.tab !== item.value}>
             {props.tab === item.value && (
@@ -205,7 +206,10 @@ function ToolBody(props: {
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_210px]"
               >
-                <ToolForm tab={item.value} meta={item} notify={props.notify} setLoading={props.setLoading} />
+                <div className="grid gap-8">
+                  <ToolForm tab={item.value} meta={item} notify={props.notify} setLoading={props.setLoading} />
+                  <ToolActions tab={item.value} notify={props.notify} setLoading={props.setLoading} />
+                </div>
                 <ModuleAside active={item} />
               </motion.div>
             )}

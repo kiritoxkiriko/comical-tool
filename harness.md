@@ -56,6 +56,7 @@ After deploy, smoke-check:
 
 ```bash
 curl -I https://tool.sqlboy.me
+curl -i https://tool.sqlboy.me/api/health
 curl -i https://tool.sqlboy.me/api/admin/cleanup -X POST
 ```
 

@@ -4,7 +4,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
-      if (url.pathname === "/healthz") return json({ ok: true });
+      if (url.pathname === "/healthz" || url.pathname === "/api/health") return json({ ok: true });
       if (url.pathname === "/api/short-links" && request.method === "POST") return createShort(request, env);
       if (url.pathname.startsWith("/api/short-links/") && url.pathname.endsWith("/revoke"))
         return revokeShort(url, env);

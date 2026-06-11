@@ -27,6 +27,7 @@ func (s *Server) Engine() *server.Hertz {
 	h.Use(middleware.CORS)
 	h.OPTIONS("/*path", middleware.Options)
 	h.GET("/healthz", routes.Health)
+	h.GET("/api/health", routes.Health)
 	h.GET("/short/:slug", routes.Redirect)
 	h.GET("/:slug", routes.Redirect)
 	api := h.Group("/api")

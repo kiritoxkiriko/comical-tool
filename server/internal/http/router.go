@@ -142,7 +142,9 @@ func (s *Server) uploadAsset(ctx context.Context, c *app.RequestContext, kind do
 		writeError(c, err)
 		return
 	}
-	defer body.Close()
+	defer func() {
+		_ = body.Close()
+	}()
 	ttl, err := parseTTL(c.PostForm("ttl"), defaultTTL)
 	if err != nil {
 		writeError(c, apperror.New(apperror.CodeBadRequest, "invalid ttl"))
@@ -172,7 +174,9 @@ func (s *Server) getAsset(ctx context.Context, c *app.RequestContext) {
 		writeError(c, err)
 		return
 	}
-	defer body.Close()
+	defer func() {
+		_ = body.Close()
+	}()
 	data, err := io.ReadAll(body)
 	if err != nil {
 		writeError(c, err)

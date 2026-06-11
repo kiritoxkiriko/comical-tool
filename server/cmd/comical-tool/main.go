@@ -24,7 +24,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer repo.Close()
+	defer func() {
+		_ = repo.Close()
+	}()
 	if err := repo.Migrate(context.Background()); err != nil {
 		log.Fatal(err)
 	}

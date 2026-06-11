@@ -1,4 +1,5 @@
 GO ?= go
+GOLANGCI_LINT ?= golangci-lint
 
 .PHONY: test lint build docker-config worker-dry-run web-build
 
@@ -9,13 +10,10 @@ test:
 	cd worker && npm run build
 
 lint:
-	test -z "$$(gofmt -l server cli)"
-	cd server && $(GO) vet ./...
-	cd cli && $(GO) vet ./...
+	cd server && $(GOLANGCI_LINT) run ./...
+	cd cli && $(GOLANGCI_LINT) run ./...
 	cd web && npm run lint
-	cd web && npm run format:check
 	cd worker && npm run lint
-	cd worker && npm run format:check
 
 build:
 	mkdir -p bin

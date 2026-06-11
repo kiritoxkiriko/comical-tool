@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Clipboard, FileUp, ImageUp, Link2, Loader2, Sparkles } from "lucide-react";
 import Image from "next/image";
+import { type FormEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

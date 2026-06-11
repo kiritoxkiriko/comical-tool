@@ -27,9 +27,11 @@ func (l *Local) Put(ctx context.Context, key string, body io.Reader) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	_, err = io.Copy(file, body)
-	return err
+	if _, err = io.Copy(file, body); err != nil {
+		_ = file.Close()
+		return err
+	}
+	return file.Close()
 }
 
 func (l *Local) Open(ctx context.Context, key string) (io.ReadCloser, error) {

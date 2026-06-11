@@ -42,7 +42,7 @@ async function createShort(request: Request, env: Env): Promise<Response> {
   return json({
     slug,
     target_url: body.target_url,
-    short_url: publicURL(env, "/short/" + slug),
+    short_url: publicURL(env, `/short/${slug}`),
     domain_urls: domainURLs(env, slug),
     mapped_urls: mappedURLs(env, slug),
     expires_at: expiresAt
@@ -77,13 +77,13 @@ async function createClip(request: Request, env: Env): Promise<Response> {
     visit_count: 0,
     expires_at: expiresAt
   };
-  await env.KV.put("clip:" + id, JSON.stringify(item), { expiration: expiresAt || undefined });
+  await env.KV.put(`clip:${id}`, JSON.stringify(item), { expiration: expiresAt || undefined });
   return json({ id, expires_at: expiresAt });
 }
 
 async function getClip(url: URL, env: Env): Promise<Response> {
   const id = url.pathname.split("/").pop() || "";
-  const raw = await env.KV.get("clip:" + id);
+  const raw = await env.KV.get(`clip:${id}`);
   if (!raw) return json({ error: "not_found", message: "clipboard item not found" }, 404);
   const item = JSON.parse(raw) as ClipItem;
   if (expired(item.expires_at)) return json({ error: "expired", message: "clipboard item expired" }, 410);
@@ -92,13 +92,13 @@ async function getClip(url: URL, env: Env): Promise<Response> {
   if (item.max_visits > 0 && item.visit_count >= item.max_visits)
     return json({ error: "expired", message: "clipboard item exhausted" }, 410);
   item.visit_count += 1;
-  await env.KV.put("clip:" + id, JSON.stringify(item), { expiration: item.expires_at || undefined });
+  await env.KV.put(`clip:${id}`, JSON.stringify(item), { expiration: item.expires_at || undefined });
   return json({ id, content: item.content, visit_count: item.visit_count, expires_at: item.expires_at });
 }
 
 async function deleteClip(url: URL, env: Env): Promise<Response> {
   const id = url.pathname.split("/").pop() || "";
-  await env.KV.delete("clip:" + id);
+  await env.KV.delete(`clip:${id}`);
   return json({ deleted: true });
 }
 
@@ -200,7 +200,7 @@ function domainURLs(env: Env, slug: string): Record<string, string> {
 function mappedURLs(env: Env, slug: string): Record<string, string> {
   const mappings = shortDomainMappings(env);
   return Object.fromEntries(
-    Object.entries(mappings).map(([host, base]) => [host, base.replace(/\/$/, "") + "/" + slug])
+    Object.entries(mappings).map(([host, base]) => [host, `${base.replace(/\/$/, "")}/${slug}`])
   );
 }
 

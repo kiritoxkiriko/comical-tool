@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            worker/package-lock.json
+      - name: Test server
+        run: go test ./...
+        working-directory: server
+      - name: Test CLI
+        run: go test ./...
+        working-directory: cli
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: web
+      - name: Typecheck web
+        run: npm run test
+        working-directory: web
+      - name: Build web
+        run: npm run build
+        working-directory: web
+      - name: Install worker dependencies
+        run: npm ci
+        working-directory: worker
+      - name: Generate worker types
+        run: npm run cf-typegen
+        working-directory: worker
+      - name: Build worker
+        run: npm run build
+        working-directory: worker
+      - name: Docker compose config
+        run: docker compose -f deploy/docker-compose.yml config

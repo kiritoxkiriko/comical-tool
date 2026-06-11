@@ -2,8 +2,11 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "comical-tool-web",
   "main": ".open-next/worker.js",
-  "compatibility_date": "2026-06-12",
+  "compatibility_date": "2026-06-11",
   "compatibility_flags": ["nodejs_compat"],
+  "routes": [
+    { "pattern": "tool.sqlboy.me/*", "zone_name": "sqlboy.me" }
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
@@ -13,6 +16,6 @@
     "head_sampling_rate": 1
   },
   "vars": {
-    "NEXT_PUBLIC_API_BASE_URL": "https://comical-tool-api.workers.dev"
+    "NEXT_PUBLIC_API_BASE_URL": "https://tool.sqlboy.me"
   }
 }

@@ -7,8 +7,9 @@ test:
 	cd worker && npm run build
 
 build:
-	cd server && go build ./cmd/comical-tool
-	cd cli && go build ./cmd/comical-cli
+	mkdir -p bin
+	cd server && go build -o ../bin/comical-tool ./cmd/comical-tool
+	cd cli && go build -o ../bin/comical-cli ./cmd/comical-cli
 	cd web && npm run build
 
 docker-config:

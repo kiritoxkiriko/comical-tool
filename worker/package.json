@@ -1,0 +1,17 @@
+{
+  "name": "comical-tool-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "dry-run": "wrangler deploy --dry-run",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "typescript": "5.7.2",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "comical-tool-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-06-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "triggers": {
+    "crons": ["*/30 * * * *"]
+  },
+  "routes": [
+    { "pattern": "tool.sqlboy.me/api/*", "zone_name": "sqlboy.me" },
+    { "pattern": "tool.sqlboy.me/short/*", "zone_name": "sqlboy.me" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "comical-tool",
+      "database_id": "22d727aa-0234-4c19-a6af-acf8acfc40ad",
+      "migrations_dir": "../migrations/d1"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "comical-tool-objects"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "a8dd3418d3cc46089733f4a9988f8c58"
+    }
+  ],
+  "vars": {
+    "PUBLIC_BASE_URL": "https://tool.sqlboy.me",
+    "SHORT_DOMAIN_MAPPINGS": "{\"s.tool.sqlboy.me\":\"https://tool.sqlboy.me/short\"}"
+  }
+}

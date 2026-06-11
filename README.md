@@ -20,6 +20,7 @@ migrations/ SQL migrations
 ```bash
 cd server && go test ./...
 cd cli && go test ./...
+make build
 cd web && npm install && npm run build
 cd worker && npm install && npm run build
 docker compose -f deploy/docker-compose.yml config
@@ -48,11 +49,11 @@ Short links support independent domains mapped to a canonical app path.
 
 ```toml
 [modules.short_link]
-domain_mappings = { "s.example.com" = "https://myapp.example.com/short" }
+domain_mappings = { "s.tool.sqlboy.me" = "https://tool.sqlboy.me/short" }
 ```
 
-With this mapping, `https://s.example.com/abc123` maps to the same short-link
-resource as `https://myapp.example.com/short/abc123`.
+With this mapping, `https://s.tool.sqlboy.me/abc123` maps to the same
+short-link resource as `https://tool.sqlboy.me/short/abc123`.
 
 ## Cloudflare
 
@@ -68,7 +69,7 @@ GitHub Actions deploys both on `main` updates. Required repository secrets:
 
 Required repository variable:
 
-- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_API_BASE_URL` defaults to `https://tool.sqlboy.me`
 
 Create Cloudflare D1, R2, and KV resources before production deployment and
 replace placeholder binding IDs in `worker/wrangler.jsonc`.

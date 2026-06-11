@@ -1,0 +1,47 @@
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/server.Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - comical-data:/data
+    depends_on:
+      - redis
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:17-alpine
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_DB: comical
+      POSTGRES_USER: comical
+      POSTGRES_PASSWORD: comical
+
+  mysql:
+    image: mysql:9
+    profiles: ["mysql"]
+    environment:
+      MYSQL_DATABASE: comical
+      MYSQL_USER: comical
+      MYSQL_PASSWORD: comical
+      MYSQL_ROOT_PASSWORD: comical
+
+volumes:
+  comical-data:

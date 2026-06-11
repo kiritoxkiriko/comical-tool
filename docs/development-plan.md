@@ -218,7 +218,7 @@ content_encryption_key = "change-me-32-bytes"
 [modules.short_link]
 default_ttl = "168h"
 allow_custom_slug = true
-domain_mappings = { "s.example.com" = "https://myapp.example.com/short" }
+domain_mappings = { "s.tool.sqlboy.me" = "https://tool.sqlboy.me/short" }
 
 [modules.image_hosting]
 default_ttl = "720h"
@@ -306,7 +306,7 @@ API 路由统一使用 `/api` 前缀。
 - 设置过期时间
 - revoke 短链接
 - 按 slug 跳转
-- 支持独立短域名，并把短域名映射到主站 path 下，例如 `s.example.com/{slug}` 等价于 `myapp.example.com/short/{slug}`
+- 支持独立短域名，并把短域名映射到主站 path 下，例如 `s.tool.sqlboy.me/{slug}` 等价于 `tool.sqlboy.me/short/{slug}`
 - 记录访问事件
 - 绑定图片、剪贴板或文件资源
 

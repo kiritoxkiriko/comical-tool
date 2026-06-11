@@ -183,6 +183,10 @@ func (s *Service) DeleteAsset(ctx context.Context, id string) error {
 	return err
 }
 
+func (s *Service) CleanupExpired(ctx context.Context) (repository.CleanupResult, error) {
+	return s.repo.CleanupExpired(ctx)
+}
+
 func (s *Service) newAsset(ctx context.Context, kind domain.ResourceType, up Upload) (domain.Asset, error) {
 	id, err := policy.RandomID()
 	if err != nil {

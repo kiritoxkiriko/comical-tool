@@ -10,9 +10,15 @@ export default {
       if (url.pathname.startsWith("/short/") && request.method === "GET") return redirectShort(url, env);
       if (url.pathname === "/api/clip" && request.method === "POST") return createClip(request, env);
       if (url.pathname.startsWith("/api/clip/") && request.method === "GET") return getClip(url, env);
+      if (url.pathname.startsWith("/api/clip/") && request.method === "DELETE") return deleteClip(url, env);
       if (url.pathname === "/api/images" && request.method === "POST") return uploadAsset(request, env, "image");
+      if (url.pathname === "/api/images" && request.method === "GET") return listAssets(env, "image");
+      if (url.pathname.startsWith("/api/images/") && request.method === "DELETE") return deleteAsset(url, env);
       if (url.pathname === "/api/files" && request.method === "POST") return uploadAsset(request, env, "file");
+      if (url.pathname === "/api/files" && request.method === "GET") return listAssets(env, "file");
+      if (url.pathname.startsWith("/api/files/") && request.method === "DELETE") return deleteAsset(url, env);
       if (url.pathname.startsWith("/api/assets/") && request.method === "GET") return getAsset(url, env);
+      if (url.pathname === "/api/admin/cleanup" && request.method === "POST") return adminCleanup(env);
       if (request.method === "GET" && url.pathname.length > 1) return redirectShort(url, env);
       return json({ error: "not_found", message: "route not found" }, 404);
     } catch (error) {
@@ -79,6 +85,12 @@ async function getClip(url: URL, env: Env): Promise<Response> {
   return json({ id, content: item.content, visit_count: item.visit_count, expires_at: item.expires_at });
 }
 
+async function deleteClip(url: URL, env: Env): Promise<Response> {
+  const id = url.pathname.split("/").pop() || "";
+  await env.KV.delete("clip:" + id);
+  return json({ deleted: true });
+}
+
 async function uploadAsset(request: Request, env: Env, kind: string): Promise<Response> {
   const form = await request.formData();
   const file = form.get("file");
@@ -104,9 +116,30 @@ async function getAsset(url: URL, env: Env): Promise<Response> {
   return new Response(object.body, { headers: { "content-type": row.content_type } });
 }
 
+async function listAssets(env: Env, kind: string): Promise<Response> {
+  const result = await env.DB.prepare(
+    "SELECT id, kind, name, content_type, size, short_slug, expires_at, created_at FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC"
+  ).bind(kind).all();
+  return json(result.results);
+}
+
+async function deleteAsset(url: URL, env: Env): Promise<Response> {
+  const id = url.pathname.split("/").pop();
+  const row = await env.DB.prepare("SELECT object_key FROM assets WHERE id = ?").bind(id).first<{ object_key: string }>();
+  if (!row) return json({ error: "not_found", message: "asset not found" }, 404);
+  await env.BUCKET.delete(row.object_key);
+  await env.DB.prepare("UPDATE assets SET deleted_at = ? WHERE id = ?").bind(now(), id).run();
+  return json({ deleted: true });
+}
+
 async function cleanExpired(env: Env): Promise<void> {
   const current = now();
   await env.DB.prepare("UPDATE assets SET deleted_at = ? WHERE expires_at IS NOT NULL AND expires_at < ?").bind(current, current).run();
+}
+
+async function adminCleanup(env: Env): Promise<Response> {
+  await cleanExpired(env);
+  return json({ cleanup: true });
 }
 
 function json(value: unknown, status = 200): Response {

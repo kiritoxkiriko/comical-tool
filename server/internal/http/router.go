@@ -47,6 +47,7 @@ func (s *Server) Run() {
 	api.POST("/files", s.uploadFile)
 	api.GET("/files", s.listFiles)
 	api.DELETE("/files/:id", s.deleteAsset)
+	api.POST("/admin/cleanup", s.cleanup)
 	h.Spin()
 }
 
@@ -183,6 +184,11 @@ func (s *Server) getAsset(ctx context.Context, c *app.RequestContext) {
 func (s *Server) deleteAsset(ctx context.Context, c *app.RequestContext) {
 	err := s.svc.DeleteAsset(ctx, c.Param("id"))
 	writeResult(c, utils.H{"deleted": err == nil}, err)
+}
+
+func (s *Server) cleanup(ctx context.Context, c *app.RequestContext) {
+	result, err := s.svc.CleanupExpired(ctx)
+	writeResult(c, result, err)
 }
 
 type shortRequest struct {

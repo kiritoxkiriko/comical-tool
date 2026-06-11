@@ -1,19 +1,22 @@
 package command
 
 import (
-	"fmt"
+	"net/http"
 
 	"github.com/spf13/cobra"
 )
 
-func newAdminCommand(_ *appState) *cobra.Command {
+func newAdminCommand(state *appState) *cobra.Command {
 	cmd := &cobra.Command{Use: "admin", Short: "Administrative commands"}
 	cmd.AddCommand(&cobra.Command{
 		Use:   "cleanup",
 		Short: "Request cleanup of expired resources",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := fmt.Fprintln(cmd.OutOrStdout(), `{"cleanup":"not_implemented"}`)
-			return err
+			data, err := state.client().JSON(http.MethodPost, "/api/admin/cleanup", nil)
+			if err != nil {
+				return err
+			}
+			return printJSON(data)
 		},
 	})
 	return cmd

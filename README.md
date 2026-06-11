@@ -61,12 +61,16 @@ short-link resource as `https://tool.sqlboy.me/short/abc123`.
 
 ## Cloudflare
 
-Cloudflare deployment is split into:
+Cloudflare support is split into:
 
 - `worker/`: API adapter deployed with Wrangler, backed by D1, R2, and KV.
 - `web/`: Next.js deployed to Workers through `@opennextjs/cloudflare`.
 
-GitHub Actions deploys both on `main` updates. Required repository secrets:
+GitHub Actions Cloudflare deployment is intentionally disabled. Validate with
+dry-runs and builds by default; only deploy manually when the current task
+explicitly asks for deployment.
+
+Manual deployment requires:
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
@@ -89,4 +93,5 @@ npm run dev
 Docs entry points:
 
 - `docs/guide/index.md` for quick start, APIs, CLI, and migrations.
-- `docs/cloudflare.md` for manual Wrangler deployment and Cloudflare runtime differences.
+- `docs/cloudflare.md` for Cloudflare verification, explicit manual deployment,
+  and runtime differences.

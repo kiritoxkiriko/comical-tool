@@ -1,4 +1,4 @@
-# Cloudflare Deployment
+# Cloudflare
 
 `comical-tool` uses two Workers in Cloudflare:
 
@@ -25,24 +25,39 @@ cd worker
 wrangler secret put ADMIN_TOKEN
 ```
 
+## Verification
+
+GitHub Actions Cloudflare deployment is intentionally disabled. Agents should use
+dry-runs and builds for validation and must not run deployment commands unless
+the user explicitly asks for deployment in the current turn.
+
+```bash
+cd worker
+npm run dry-run
+```
+
+Build the Web Worker output:
+
+```bash
+cd web
+npm run build
+```
+
 ## Manual Deploy
 
-Deploy the API Worker first so API routes are in place before the Web route catches
-the zone wildcard.
+Only run this section after an explicit current-turn deployment request. Deploy
+the API Worker first so API routes are in place before the Web route catches the
+zone wildcard, then deploy the Web Worker:
 
 ```bash
 cd worker
 npm run deploy
-```
 
-Deploy the Web Worker:
-
-```bash
-cd web
+cd ../web
 npm run deploy
 ```
 
-Smoke check:
+After an explicit deployment, smoke-check:
 
 ```bash
 curl -I https://tool.sqlboy.me

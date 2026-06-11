@@ -68,13 +68,15 @@ comical-cli file download <asset-id> --output ./archive.zip
 
 ## Cloudflare
 
-Deploy the API Worker from `worker/` and the Web UI from `web/`.
+Cloudflare deployment support is available, but GitHub Actions deployment is
+disabled. Use dry-runs and builds for validation unless the current task
+explicitly asks for a manual deployment.
 
 Before production deployment, create D1, R2, and KV resources and update
 `worker/wrangler.jsonc`.
 
-See [Cloudflare Deployment](../cloudflare.md) for manual Wrangler deployment,
-runtime differences, and smoke checks.
+See [Cloudflare](../cloudflare.md) for Cloudflare verification, explicit manual
+deployment, runtime differences, and smoke checks.
 
 ## Migrations
 

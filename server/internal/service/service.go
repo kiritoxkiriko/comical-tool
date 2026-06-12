@@ -96,13 +96,24 @@ func (s *Service) CreateClipboard(ctx context.Context, content, password string,
 		return domain.ClipboardItem{}, err
 	}
 	item := domain.ClipboardItem{ID: id, Content: content, PasswordHash: hash, MaxVisits: maxVisits, ExpiresAt: policy.ExpiryFromDuration(ttl)}
+	var linkedShortID string
 	if link {
-		item.ShortSlug, err = s.linkTarget(ctx, s.publicURL("/api/clip/"+id), ttl)
+		linked, err := s.linkTarget(ctx, s.publicURL("/api/clip/"+id), ttl)
+		if err != nil {
+			return domain.ClipboardItem{}, err
+		}
+		item.ShortSlug = linked.Slug
+		linkedShortID = linked.ID
 	}
-	if err != nil {
+	if err := s.repo.CreateClipboard(ctx, item); err != nil {
 		return domain.ClipboardItem{}, err
 	}
-	return item, s.repo.CreateClipboard(ctx, item)
+	if linkedShortID != "" {
+		if err := s.recordResourceLink(ctx, linkedShortID, domain.ResourceClipboard, item.ID); err != nil {
+			return domain.ClipboardItem{}, err
+		}
+	}
+	return item, nil
 }
 
 func (s *Service) GetClipboard(ctx context.Context, id, password string) (domain.ClipboardItem, error) {
@@ -154,7 +165,15 @@ func (s *Service) UploadAsset(ctx context.Context, kind domain.ResourceType, up 
 		return domain.Asset{}, err
 	}
 	asset.Size = int64(buf.Len())
-	return asset, s.repo.CreateAsset(ctx, asset)
+	if err := s.repo.CreateAsset(ctx, asset); err != nil {
+		return domain.Asset{}, err
+	}
+	if asset.LinkedShortID != "" {
+		if err := s.recordResourceLink(ctx, asset.LinkedShortID, kind, asset.ID); err != nil {
+			return domain.Asset{}, err
+		}
+	}
+	return asset, nil
 }
 
 func (s *Service) maxAssetBytes(kind domain.ResourceType) int64 {
@@ -236,17 +255,22 @@ func (s *Service) newAsset(ctx context.Context, kind domain.ResourceType, up Upl
 		ExpiresAt: policy.ExpiryFromDuration(up.TTL),
 	}
 	if up.Link {
-		asset.ShortSlug, err = s.linkTarget(ctx, s.publicURL("/api/assets/"+id), up.TTL)
+		linked, err := s.linkTarget(ctx, s.publicURL("/api/assets/"+id), up.TTL)
+		if err != nil {
+			return domain.Asset{}, err
+		}
+		asset.ShortSlug = linked.Slug
+		asset.LinkedShortID = linked.ID
 	}
 	return asset, err
 }
 
-func (s *Service) linkTarget(ctx context.Context, target string, ttl time.Duration) (string, error) {
+func (s *Service) linkTarget(ctx context.Context, target string, ttl time.Duration) (domain.ShortLink, error) {
 	link, err := s.CreateShortLink(ctx, target, "", ttl)
 	if err != nil {
-		return "", err
+		return domain.ShortLink{}, err
 	}
-	return link.Slug, nil
+	return link, nil
 }
 
 func (s *Service) slug(custom string) (string, error) {
@@ -285,5 +309,15 @@ func (s *Service) recordAccessEvent(ctx context.Context, resourceType domain.Res
 	}
 	return s.repo.RecordAccessEvent(ctx, domain.AccessEvent{
 		ID: id, ResourceType: resourceType, ResourceID: resourceID, Action: action,
+	})
+}
+
+func (s *Service) recordResourceLink(ctx context.Context, shortLinkID string, resourceType domain.ResourceType, resourceID string) error {
+	id, err := policy.RandomID()
+	if err != nil {
+		return err
+	}
+	return s.repo.CreateResourceLink(ctx, domain.ResourceLink{
+		ID: id, ShortLinkID: shortLinkID, ResourceType: resourceType, ResourceID: resourceID,
 	})
 }

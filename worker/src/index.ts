@@ -93,15 +93,18 @@ async function createClip(request: Request, env: Env, meta: RequestMeta): Promis
   const policy = await policyWasm();
   const expiresAt = expiryUnix(policy, body.ttl, defaultClipTTLSeconds);
   if (expiresAt === invalidExpiry) return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
+  const linked = body.link ? await createLinkedShort(env, policy, publicURL(env, `/api/clip/${id}`), expiresAt) : null;
   const item = {
     content: body.content,
     password_hash: await hashPassword(body.password || ""),
+    short_slug: linked?.slug || "",
     max_visits: body.max_visits || 5,
     visit_count: 0,
     expires_at: expiresAt
   };
   await env.KV.put(`clip:${id}`, JSON.stringify(item), { expiration: expiresAt || undefined });
-  return json({ id, expires_at: expiresAt }, 200, meta);
+  if (linked) await recordResourceLink(env, linked.id, "clipboard", id);
+  return json({ id, short_slug: linked?.slug, expires_at: expiresAt }, 200, meta);
 }
 
 async function getClip(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
@@ -139,12 +142,30 @@ async function uploadAsset(request: Request, env: Env, kind: string, meta: Reque
   const passwordHash = kind === "file" ? await hashPassword(String(form.get("password") || "")) : "";
   const id = crypto.randomUUID();
   const key = `${kind}/${id}`;
+  const linked =
+    form.get("link") === "true"
+      ? await createLinkedShort(env, policy, publicURL(env, `/api/assets/${id}`), expiresAt)
+      : null;
   await env.BUCKET.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
   await env.DB.prepare(
-    "INSERT INTO assets (id, kind, name, content_type, size, object_key, password_hash, max_visits, visit_count, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO assets (id, kind, name, content_type, size, object_key, short_slug, password_hash, max_visits, visit_count, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   )
-    .bind(id, kind, file.name, file.type, file.size, key, passwordHash, maxVisits, 0, expiresAt, now())
+    .bind(
+      id,
+      kind,
+      file.name,
+      file.type,
+      file.size,
+      key,
+      linked?.slug || null,
+      passwordHash,
+      maxVisits,
+      0,
+      expiresAt,
+      now()
+    )
     .run();
+  if (linked) await recordResourceLink(env, linked.id, kind, id);
   return json(
     {
       id,
@@ -152,6 +173,7 @@ async function uploadAsset(request: Request, env: Env, kind: string, meta: Reque
       name: file.name,
       content_type: file.type,
       size: file.size,
+      short_slug: linked?.slug,
       max_visits: maxVisits,
       expires_at: expiresAt
     },
@@ -213,6 +235,33 @@ async function recordAccessEvent(env: Env, resourceType: string, resourceID: str
     "INSERT INTO access_events (id, resource_type, resource_id, action, created_at) VALUES (?, ?, ?, ?, ?)"
   )
     .bind(crypto.randomUUID(), resourceType, resourceID, action, now())
+    .run();
+}
+
+async function createLinkedShort(
+  env: Env,
+  policy: PolicyWasm,
+  targetURL: string,
+  expiresAt: number | null
+): Promise<{ id: string; slug: string }> {
+  const id = crypto.randomUUID();
+  const slug = policy.randomSlug();
+  await env.DB.prepare("INSERT INTO short_links (id, slug, target_url, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
+    .bind(id, slug, targetURL, expiresAt, now())
+    .run();
+  return { id, slug };
+}
+
+async function recordResourceLink(
+  env: Env,
+  shortLinkID: string,
+  resourceType: string,
+  resourceID: string
+): Promise<void> {
+  await env.DB.prepare(
+    "INSERT INTO resource_links (id, short_link_id, resource_type, resource_id, created_at) VALUES (?, ?, ?, ?, ?)"
+  )
+    .bind(crypto.randomUUID(), shortLinkID, resourceType, resourceID, now())
     .run();
 }
 
@@ -329,7 +378,7 @@ async function checkPassword(hash: string, password: string): Promise<boolean> {
 }
 
 type ShortRequest = { target_url: string; custom_slug?: string; ttl?: string };
-type ClipRequest = { content: string; password?: string; max_visits?: number; ttl?: string };
+type ClipRequest = { content: string; password?: string; max_visits?: number; ttl?: string; link?: boolean };
 type ShortRow = { id: string; target_url: string; expires_at: number | null; revoked_at: number | null };
 type AssetRow = {
   object_key: string;
@@ -345,6 +394,7 @@ type PolicyWasm = Awaited<ReturnType<typeof policyWasm>>;
 type ClipItem = {
   content: string;
   password_hash: string;
+  short_slug: string;
   max_visits: number;
   visit_count: number;
   expires_at: number | null;

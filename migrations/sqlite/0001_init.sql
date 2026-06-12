@@ -54,4 +54,14 @@ CREATE TABLE IF NOT EXISTS access_events (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS resource_links (
+  id TEXT PRIMARY KEY,
+  short_link_id TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_access_events_resource ON access_events(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_resource_links_resource ON resource_links(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_resource_links_short ON resource_links(short_link_id);

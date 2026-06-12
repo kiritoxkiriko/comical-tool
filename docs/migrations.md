@@ -14,6 +14,10 @@ The schema includes `access_events` for resource access audit records. Short
 link redirects write a `short_link` / `redirect` event in both self-hosted and
 Cloudflare runtimes.
 
+The schema also includes `resource_links` so short links generated for images,
+clipboard entries, and temporary files can be traced back to their source
+resource.
+
 SQLite is the default local mode:
 
 ```toml

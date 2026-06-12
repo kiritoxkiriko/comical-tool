@@ -54,6 +54,9 @@ Routes:
 - `GET /api/assets/{id}`
 - `DELETE /api/images/{id}`
 
+When `link=true` is sent, the API creates a short link and records the
+association in `resource_links`.
+
 ## Clipboard
 
 ```bash
@@ -73,6 +76,9 @@ Routes:
 - `POST /api/clip`
 - `GET /api/clip/{id}`
 - `DELETE /api/clip/{id}`
+
+When `link=true` is sent, the API creates a short link and records the
+association in `resource_links`.
 
 ## Files
 
@@ -97,6 +103,9 @@ Routes:
 - `GET /api/files`
 - `GET /api/assets/{id}?password=...`
 - `DELETE /api/files/{id}`
+
+When `link=true` is sent, the API creates a short link and records the
+association in `resource_links`.
 
 ## Admin
 

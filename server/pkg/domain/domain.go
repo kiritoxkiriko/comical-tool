@@ -26,19 +26,20 @@ type ShortLink struct {
 }
 
 type Asset struct {
-	ID           string       `json:"id"`
-	Kind         ResourceType `json:"kind"`
-	Name         string       `json:"name"`
-	ContentType  string       `json:"content_type"`
-	Size         int64        `json:"size"`
-	ObjectKey    string       `json:"object_key"`
-	ShortSlug    string       `json:"short_slug,omitempty"`
-	MaxVisits    int          `json:"max_visits"`
-	VisitCount   int          `json:"visit_count"`
-	PasswordHash string       `json:"-"`
-	ExpiresAt    *time.Time   `json:"expires_at,omitempty"`
-	DeletedAt    *time.Time   `json:"deleted_at,omitempty"`
-	CreatedAt    time.Time    `json:"created_at"`
+	ID            string       `json:"id"`
+	Kind          ResourceType `json:"kind"`
+	Name          string       `json:"name"`
+	ContentType   string       `json:"content_type"`
+	Size          int64        `json:"size"`
+	ObjectKey     string       `json:"object_key"`
+	ShortSlug     string       `json:"short_slug,omitempty"`
+	LinkedShortID string       `json:"-"`
+	MaxVisits     int          `json:"max_visits"`
+	VisitCount    int          `json:"visit_count"`
+	PasswordHash  string       `json:"-"`
+	ExpiresAt     *time.Time   `json:"expires_at,omitempty"`
+	DeletedAt     *time.Time   `json:"deleted_at,omitempty"`
+	CreatedAt     time.Time    `json:"created_at"`
 }
 
 type ClipboardItem struct {
@@ -58,5 +59,13 @@ type AccessEvent struct {
 	ResourceType ResourceType `json:"resource_type"`
 	ResourceID   string       `json:"resource_id"`
 	Action       string       `json:"action"`
+	CreatedAt    time.Time    `json:"created_at"`
+}
+
+type ResourceLink struct {
+	ID           string       `json:"id"`
+	ShortLinkID  string       `json:"short_link_id"`
+	ResourceType ResourceType `json:"resource_type"`
+	ResourceID   string       `json:"resource_id"`
 	CreatedAt    time.Time    `json:"created_at"`
 }

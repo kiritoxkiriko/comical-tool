@@ -31,7 +31,17 @@ CREATE TABLE IF NOT EXISTS access_events (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS resource_links (
+  id TEXT PRIMARY KEY,
+  short_link_id TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_short_links_slug ON short_links(slug);
 CREATE INDEX IF NOT EXISTS idx_assets_kind ON assets(kind);
 CREATE INDEX IF NOT EXISTS idx_assets_expires_at ON assets(expires_at);
 CREATE INDEX IF NOT EXISTS idx_access_events_resource ON access_events(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_resource_links_resource ON resource_links(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_resource_links_short ON resource_links(short_link_id);

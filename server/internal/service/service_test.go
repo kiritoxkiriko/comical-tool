@@ -103,6 +103,51 @@ func TestResolveShortLinkRecordsAccessEvent(t *testing.T) {
 	}
 }
 
+func TestCreateClipboardWithLinkRecordsResourceLink(t *testing.T) {
+	svc := newTestService(t)
+	item, err := svc.CreateClipboard(context.Background(), "hello", "", 0, 0, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if item.ShortSlug == "" {
+		t.Fatal("expected short slug")
+	}
+	links, err := svc.repo.ListResourceLinks(context.Background(), domain.ResourceClipboard, item.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(links) != 1 {
+		t.Fatalf("expected 1 resource link, got %d", len(links))
+	}
+	if links[0].ResourceID != item.ID || links[0].ResourceType != domain.ResourceClipboard {
+		t.Fatalf("unexpected resource link: %+v", links[0])
+	}
+}
+
+func TestUploadAssetWithLinkRecordsResourceLink(t *testing.T) {
+	svc := newTestService(t)
+	asset, err := svc.UploadAsset(context.Background(), domain.ResourceFile, Upload{
+		Name: "linked.txt", ContentType: "text/plain", Size: 6,
+		Body: strings.NewReader("linked"), Link: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if asset.ShortSlug == "" {
+		t.Fatal("expected short slug")
+	}
+	links, err := svc.repo.ListResourceLinks(context.Background(), domain.ResourceFile, asset.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(links) != 1 {
+		t.Fatalf("expected 1 resource link, got %d", len(links))
+	}
+	if links[0].ResourceID != asset.ID || links[0].ResourceType != domain.ResourceFile {
+		t.Fatalf("unexpected resource link: %+v", links[0])
+	}
+}
+
 func newTestService(t *testing.T) *Service {
 	t.Helper()
 	cfg, err := config.Load("")

@@ -44,6 +44,11 @@ func TestSQLiteAccessEvents(t *testing.T) {
 	testAccessEvent(t, repo, "sqlite")
 }
 
+func TestSQLiteResourceLinks(t *testing.T) {
+	repo := openTestRepo(t)
+	testResourceLink(t, repo, "sqlite")
+}
+
 func TestExternalDatabases(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -72,6 +77,7 @@ func TestExternalDatabases(t *testing.T) {
 			testClipboard(t, repo, suffix)
 			testAsset(t, repo, suffix)
 			testAccessEvent(t, repo, suffix)
+			testResourceLink(t, repo, suffix)
 		})
 	}
 }
@@ -158,6 +164,27 @@ func testAccessEvent(t *testing.T, repo *Store, suffix string) {
 	}
 	if events[0].Action != "redirect" || events[0].ResourceID != event.ResourceID {
 		t.Fatalf("unexpected access event: %+v", events[0])
+	}
+}
+
+func testResourceLink(t *testing.T, repo *Store, suffix string) {
+	t.Helper()
+	link := domain.ResourceLink{
+		ID: "resource-link-" + suffix, ShortLinkID: "short-" + suffix,
+		ResourceType: domain.ResourceFile, ResourceID: "file-" + suffix,
+	}
+	if err := repo.CreateResourceLink(context.Background(), link); err != nil {
+		t.Fatal(err)
+	}
+	links, err := repo.ListResourceLinks(context.Background(), domain.ResourceFile, link.ResourceID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(links) != 1 {
+		t.Fatalf("expected 1 resource link, got %d", len(links))
+	}
+	if links[0].ShortLinkID != link.ShortLinkID || links[0].ResourceType != domain.ResourceFile {
+		t.Fatalf("unexpected resource link: %+v", links[0])
 	}
 }
 

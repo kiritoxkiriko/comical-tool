@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "tsc --noEmit",
+    "build": "npm run build:wasm && tsc --noEmit",
+    "build:wasm": "node scripts/build-wasm.mjs",
     "lint": "biome check .",
     "format": "biome check --write .",
+    "test:wasm": "npm run build:wasm && node scripts/test-policy-wasm.mjs",
     "deploy": "wrangler deploy",
     "dry-run": "wrangler deploy --dry-run",
     "cf-typegen": "wrangler types"

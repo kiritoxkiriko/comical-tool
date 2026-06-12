@@ -4,6 +4,11 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-06-11",
   "compatibility_flags": ["nodejs_compat"],
+  "rules": [{ "type": "CompiledWasm", "globs": ["**/*.wasm"], "fallthrough": true }],
+  "build": {
+    "command": "npm run build:wasm",
+    "watch_dir": ["../server/pkg", "./wasm", "./src"]
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

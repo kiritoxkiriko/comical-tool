@@ -62,5 +62,8 @@ jobs:
       - name: Build worker
         run: npm run build
         working-directory: worker
+      - name: Test worker WASM policy
+        run: npm run test:wasm
+        working-directory: worker
       - name: Docker compose config
         run: docker compose -f deploy/docker-compose.yml config

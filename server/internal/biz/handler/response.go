@@ -9,6 +9,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/kiritoxkiriko/comical-tool/server/internal/biz/middleware"
 	"github.com/kiritoxkiriko/comical-tool/server/pkg/apperror"
+	"github.com/kiritoxkiriko/comical-tool/server/pkg/policy"
 )
 
 type successEnvelope struct {
@@ -34,10 +35,7 @@ func bindJSON(c *app.RequestContext, out any) bool {
 }
 
 func parseTTL(value string, fallback time.Duration) (time.Duration, error) {
-	if value == "" {
-		return fallback, nil
-	}
-	return time.ParseDuration(value)
+	return policy.ParseTTLDuration(value, fallback)
 }
 
 func writeResult(c *app.RequestContext, value any, err error) {

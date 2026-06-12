@@ -83,6 +83,9 @@ areas:
 - Cleanup runs from Worker cron in Cloudflare and from `server/internal/job`
   when self-hosted.
 - Hertz is not run inside Workers; `worker/` is a Cloudflare-specific adapter.
+- Slug validation/generation, TTL calculation, expiry checks, and visit-limit
+  checks reuse `server/pkg/policy` through Go WASM generated at Worker build
+  time.
 
 Keep API paths and JSON shapes aligned with the self-hosted server. When behavior
 must differ because of Cloudflare bindings, document it in this file.

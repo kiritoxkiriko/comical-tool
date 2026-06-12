@@ -1,4 +1,10 @@
+import { policyWasm } from "./policy-wasm";
+
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
+const defaultShortTTLSeconds = 168 * 3600;
+const defaultImageTTLSeconds = 720 * 3600;
+const defaultClipTTLSeconds = 3600;
+const defaultFileTTLSeconds = 168 * 3600;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -37,10 +43,12 @@ async function createShort(request: Request, env: Env, meta: RequestMeta): Promi
   const body = (await request.json()) as ShortRequest;
   const targetURL = body.target_url?.trim() || "";
   if (!validTargetURL(targetURL)) return json({ error: "bad_request", message: "invalid target_url" }, 400, meta);
-  if (body.ttl && parseExpiry(body.ttl) === null)
-    return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
-  const slug = body.custom_slug || randomSlug();
-  const expiresAt = parseExpiry(body.ttl);
+  const policy = await policyWasm();
+  if (body.custom_slug && !policy.validateSlug(body.custom_slug))
+    return json({ error: "bad_request", message: "invalid slug" }, 400, meta);
+  const expiresAt = expiryUnix(policy, body.ttl, defaultShortTTLSeconds);
+  if (expiresAt === invalidExpiry) return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
+  const slug = body.custom_slug || policy.randomSlug();
   await env.DB.prepare("INSERT INTO short_links (id, slug, target_url, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
     .bind(crypto.randomUUID(), slug, targetURL, expiresAt, now())
     .run();
@@ -70,7 +78,8 @@ async function redirectShort(url: URL, env: Env, meta: RequestMeta): Promise<Res
     .bind(slug)
     .first<ShortRow>();
   if (!row) return json({ error: "not_found", message: "short link not found" }, 404, meta);
-  if (row.revoked_at || expired(row.expires_at))
+  const policy = await policyWasm();
+  if (row.revoked_at || expiredUnix(policy, row.expires_at))
     return json({ error: "expired", message: "short link unavailable" }, 410, meta);
   const response = Response.redirect(row.target_url, 302);
   response.headers.set("x-request-id", meta.requestID);
@@ -80,7 +89,9 @@ async function redirectShort(url: URL, env: Env, meta: RequestMeta): Promise<Res
 async function createClip(request: Request, env: Env, meta: RequestMeta): Promise<Response> {
   const body = (await request.json()) as ClipRequest;
   const id = crypto.randomUUID();
-  const expiresAt = parseExpiry(body.ttl || "1h");
+  const policy = await policyWasm();
+  const expiresAt = expiryUnix(policy, body.ttl, defaultClipTTLSeconds);
+  if (expiresAt === invalidExpiry) return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
   const item = {
     content: body.content,
     password_hash: await hashPassword(body.password || ""),
@@ -97,10 +108,12 @@ async function getClip(url: URL, env: Env, meta: RequestMeta): Promise<Response>
   const raw = await env.KV.get(`clip:${id}`);
   if (!raw) return json({ error: "not_found", message: "clipboard item not found" }, 404, meta);
   const item = JSON.parse(raw) as ClipItem;
-  if (expired(item.expires_at)) return json({ error: "expired", message: "clipboard item expired" }, 410, meta);
+  const policy = await policyWasm();
+  if (expiredUnix(policy, item.expires_at))
+    return json({ error: "expired", message: "clipboard item expired" }, 410, meta);
   if (!(await checkPassword(item.password_hash, url.searchParams.get("password") || "")))
     return json({ error: "forbidden", message: "invalid password" }, 403, meta);
-  if (item.max_visits > 0 && item.visit_count >= item.max_visits)
+  if (policy.visitLimitExceeded(item.max_visits, item.visit_count))
     return json({ error: "expired", message: "clipboard item exhausted" }, 410, meta);
   item.visit_count += 1;
   await env.KV.put(`clip:${id}`, JSON.stringify(item), { expiration: item.expires_at || undefined });
@@ -120,7 +133,9 @@ async function uploadAsset(request: Request, env: Env, kind: string, meta: Reque
   const id = crypto.randomUUID();
   const key = `${kind}/${id}`;
   await env.BUCKET.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
-  const expiresAt = parseExpiry(String(form.get("ttl") || ""));
+  const policy = await policyWasm();
+  const expiresAt = expiryUnix(policy, String(form.get("ttl") || ""), defaultAssetTTLSeconds(kind));
+  if (expiresAt === invalidExpiry) return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
   await env.DB.prepare(
     "INSERT INTO assets (id, kind, name, content_type, size, object_key, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   )
@@ -139,7 +154,8 @@ async function getAsset(url: URL, env: Env, meta: RequestMeta): Promise<Response
     .bind(id)
     .first<AssetRow>();
   if (!row) return json({ error: "not_found", message: "asset not found" }, 404, meta);
-  if (row.deleted_at || expired(row.expires_at))
+  const policy = await policyWasm();
+  if (row.deleted_at || expiredUnix(policy, row.expires_at))
     return json({ error: "expired", message: "asset unavailable" }, 410, meta);
   const object = await env.BUCKET.get(row.object_key);
   if (!object) return json({ error: "not_found", message: "object not found" }, 404, meta);
@@ -207,19 +223,7 @@ function requestMeta(request: Request): RequestMeta {
   return { requestID: request.headers.get("x-request-id")?.trim() || crypto.randomUUID() };
 }
 
-function randomSlug(): string {
-  const bytes = new Uint8Array(4);
-  crypto.getRandomValues(bytes);
-  return [...bytes].map((value) => value.toString(16).padStart(2, "0")).join("");
-}
-
-function parseExpiry(ttl?: string): number | null {
-  if (!ttl) return null;
-  const match = /^(\d+)(m|h|d)$/.exec(ttl);
-  if (!match) return null;
-  const units = { m: 60, h: 3600, d: 86400 } as const;
-  return now() + Number(match[1]) * units[match[2] as keyof typeof units];
-}
+const invalidExpiry = -1;
 
 function validTargetURL(value: string): boolean {
   try {
@@ -230,8 +234,23 @@ function validTargetURL(value: string): boolean {
   }
 }
 
-function expired(timestamp: number | null): boolean {
-  return timestamp !== null && timestamp < now();
+function expiryUnix(
+  policy: PolicyWasm,
+  ttl: string | undefined,
+  fallbackSeconds: number
+): number | null | typeof invalidExpiry {
+  const value = policy.expiryUnix(ttl || "", fallbackSeconds);
+  if (value === invalidExpiry) return invalidExpiry;
+  if (value <= 0) return null;
+  return value;
+}
+
+function expiredUnix(policy: PolicyWasm, timestamp: number | null): boolean {
+  return timestamp !== null && policy.expiredUnix(timestamp);
+}
+
+function defaultAssetTTLSeconds(kind: string): number {
+  return kind === "image" ? defaultImageTTLSeconds : defaultFileTTLSeconds;
 }
 
 function now(): number {
@@ -281,6 +300,7 @@ type ClipRequest = { content: string; password?: string; max_visits?: number; tt
 type ShortRow = { target_url: string; expires_at: number | null; revoked_at: number | null };
 type AssetRow = { object_key: string; content_type: string; expires_at: number | null; deleted_at: number | null };
 type RequestMeta = { requestID: string };
+type PolicyWasm = Awaited<ReturnType<typeof policyWasm>>;
 type ClipItem = {
   content: string;
   password_hash: string;

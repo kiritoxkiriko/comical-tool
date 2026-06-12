@@ -17,6 +17,7 @@ npm-debug.log*
 .open-next/
 *.tsbuildinfo
 .wrangler/
+worker/src/gen/
 docs/.vitepress/dist/
 worker/worker-configuration.d.ts
 

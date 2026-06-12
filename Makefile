@@ -8,6 +8,7 @@ test:
 	cd cli && $(GO) test ./...
 	cd web && npm run test
 	cd worker && npm run build
+	cd worker && npm run test:wasm
 
 lint:
 	cd server && $(GOLANGCI_LINT) run ./...

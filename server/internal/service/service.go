@@ -111,7 +111,7 @@ func (s *Service) GetClipboard(ctx context.Context, id, password string) (domain
 	if item.DeletedAt != nil || policy.IsExpired(item.ExpiresAt) {
 		return domain.ClipboardItem{}, apperror.New(apperror.CodeExpired, "clipboard item expired")
 	}
-	if item.MaxVisits > 0 && item.VisitCount >= item.MaxVisits {
+	if policy.VisitLimitExceeded(item.MaxVisits, item.VisitCount) {
 		return domain.ClipboardItem{}, apperror.New(apperror.CodeExpired, "clipboard item exhausted")
 	}
 	if !policy.CheckPassword(item.PasswordHash, password) {

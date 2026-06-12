@@ -65,5 +65,7 @@ jobs:
       - name: Test worker WASM policy
         run: npm run test:wasm
         working-directory: worker
+      - name: Check D1 migrations
+        run: scripts/check-d1-migrations.sh
       - name: Docker compose config
         run: docker compose -f deploy/docker-compose.yml config

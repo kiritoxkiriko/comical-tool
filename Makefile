@@ -9,6 +9,7 @@ test:
 	cd web && npm run test
 	cd worker && npm run build
 	cd worker && npm run test:wasm
+	scripts/check-d1-migrations.sh
 
 lint:
 	cd server && $(GOLANGCI_LINT) run ./...

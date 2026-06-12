@@ -43,3 +43,9 @@ COMICAL_TEST_MYSQL_DSN='comical:comical@tcp(127.0.0.1:13306)/comical?parseTime=t
 ```
 
 Cloudflare D1 uses `migrations/d1`.
+
+Local D1 migration smoke test:
+
+```bash
+scripts/check-d1-migrations.sh
+```

@@ -115,6 +115,17 @@ func TestResolveShortLinkRecordsAccessEvent(t *testing.T) {
 	}
 }
 
+func TestCreateShortLinkRejectsDuplicateActiveSlug(t *testing.T) {
+	svc := newTestService(t)
+	if _, err := svc.CreateShortLink(context.Background(), "https://example.com/a", "dup", 0); err != nil {
+		t.Fatal(err)
+	}
+	_, err := svc.CreateShortLink(context.Background(), "https://example.com/b", "dup", 0)
+	if !hasAppCode(err, apperror.CodeConflict) {
+		t.Fatalf("expected conflict, got %v", err)
+	}
+}
+
 func TestCreateClipboardWithLinkRecordsResourceLink(t *testing.T) {
 	svc := newTestService(t)
 	item, err := svc.CreateClipboard(context.Background(), "hello", "", 0, 0, true)

@@ -35,6 +35,7 @@ Routes:
 - `GET /short/{slug}`
 - `GET /{slug}` for short-domain mappings
 
+Creating a short link with an already active custom slug returns `conflict`.
 Successful redirects are recorded in `access_events` as `short_link` /
 `redirect` events.
 

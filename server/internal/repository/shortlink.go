@@ -24,6 +24,9 @@ INSERT INTO short_links
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		link.ID, domain.GuestUserID, link.Slug, link.TargetURL,
 		s.timeArg(nullableTime(link.ExpiresAt)), s.timeArg(nullableTime(link.RevokedAt)), now, now)
+	if err != nil && isUniqueConstraintError(err) {
+		return ErrConflict
+	}
 	return err
 }
 

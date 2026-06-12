@@ -52,7 +52,13 @@ func (s *Service) CreateShortLink(ctx context.Context, targetURL, customSlug str
 	}
 	link := domain.ShortLink{ID: id, Slug: slug, TargetURL: targetURL, ExpiresAt: policy.ExpiryFromDuration(ttl)}
 	link = s.decorateShortLink(link)
-	return link, s.repo.CreateShortLink(ctx, link)
+	if err := s.repo.CreateShortLink(ctx, link); err != nil {
+		if errors.Is(err, repository.ErrConflict) {
+			return domain.ShortLink{}, apperror.New(apperror.CodeConflict, "short slug already exists")
+		}
+		return domain.ShortLink{}, err
+	}
+	return link, nil
 }
 
 func (s *Service) ResolveShortLink(ctx context.Context, slug string) (string, error) {

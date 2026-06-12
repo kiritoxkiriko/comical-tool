@@ -10,6 +10,10 @@ Migration directories:
 The self-hosted server can run the equivalent schema through
 `server/internal/repository`.
 
+The schema includes `access_events` for resource access audit records. Short
+link redirects write a `short_link` / `redirect` event in both self-hosted and
+Cloudflare runtimes.
+
 SQLite is the default local mode:
 
 ```toml
@@ -35,4 +39,3 @@ COMICAL_TEST_MYSQL_DSN='comical:comical@tcp(127.0.0.1:13306)/comical?parseTime=t
 ```
 
 Cloudflare D1 uses `migrations/d1`.
-

@@ -39,6 +39,11 @@ func TestSQLiteAssetVisitCount(t *testing.T) {
 	testAsset(t, repo, "sqlite")
 }
 
+func TestSQLiteAccessEvents(t *testing.T) {
+	repo := openTestRepo(t)
+	testAccessEvent(t, repo, "sqlite")
+}
+
 func TestExternalDatabases(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -66,6 +71,7 @@ func TestExternalDatabases(t *testing.T) {
 			testShortLink(t, repo, suffix)
 			testClipboard(t, repo, suffix)
 			testAsset(t, repo, suffix)
+			testAccessEvent(t, repo, suffix)
 		})
 	}
 }
@@ -131,6 +137,27 @@ func testAsset(t *testing.T, repo *Store, suffix string) {
 	}
 	if got.MaxVisits != 2 || got.PasswordHash != "hash" {
 		t.Fatalf("asset access policy not persisted: %+v", got)
+	}
+}
+
+func testAccessEvent(t *testing.T, repo *Store, suffix string) {
+	t.Helper()
+	event := domain.AccessEvent{
+		ID: "event-" + suffix, ResourceType: domain.ResourceShortLink,
+		ResourceID: "short-" + suffix, Action: "redirect",
+	}
+	if err := repo.RecordAccessEvent(context.Background(), event); err != nil {
+		t.Fatal(err)
+	}
+	events, err := repo.ListAccessEvents(context.Background(), domain.ResourceShortLink, event.ResourceID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected 1 access event, got %d", len(events))
+	}
+	if events[0].Action != "redirect" || events[0].ResourceID != event.ResourceID {
+		t.Fatalf("unexpected access event: %+v", events[0])
 	}
 }
 

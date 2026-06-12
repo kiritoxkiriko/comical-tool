@@ -45,3 +45,13 @@ CREATE TABLE IF NOT EXISTS clipboard_items (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS access_events (
+  id TEXT PRIMARY KEY,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_access_events_resource ON access_events(resource_type, resource_id);

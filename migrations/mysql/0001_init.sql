@@ -48,9 +48,18 @@ CREATE TABLE IF NOT EXISTS clipboard_items (
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
 );
 
+CREATE TABLE IF NOT EXISTS access_events (
+  id VARCHAR(191) PRIMARY KEY,
+  resource_type VARCHAR(32) NOT NULL,
+  resource_id VARCHAR(191) NOT NULL,
+  action VARCHAR(64) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+);
+
 CREATE INDEX idx_short_links_slug ON short_links(slug);
 CREATE INDEX idx_short_links_expires_at ON short_links(expires_at);
 CREATE INDEX idx_assets_owner ON assets(owner_id);
 CREATE INDEX idx_assets_kind ON assets(kind);
 CREATE INDEX idx_assets_expires_at ON assets(expires_at);
 CREATE INDEX idx_clipboard_expires_at ON clipboard_items(expires_at);
+CREATE INDEX idx_access_events_resource ON access_events(resource_type, resource_id);

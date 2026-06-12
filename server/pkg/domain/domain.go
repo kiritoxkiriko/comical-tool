@@ -52,3 +52,11 @@ type ClipboardItem struct {
 	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
 	CreatedAt    time.Time  `json:"created_at"`
 }
+
+type AccessEvent struct {
+	ID           string       `json:"id"`
+	ResourceType ResourceType `json:"resource_type"`
+	ResourceID   string       `json:"resource_id"`
+	Action       string       `json:"action"`
+	CreatedAt    time.Time    `json:"created_at"`
+}

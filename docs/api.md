@@ -35,6 +35,9 @@ Routes:
 - `GET /short/{slug}`
 - `GET /{slug}` for short-domain mappings
 
+Successful redirects are recorded in `access_events` as `short_link` /
+`redirect` events.
+
 ## Images
 
 ```bash
@@ -101,4 +104,3 @@ Routes:
 curl -sS -X POST http://localhost:8080/api/admin/cleanup \
   -H 'authorization: Bearer <admin-token>'
 ```
-

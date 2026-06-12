@@ -69,6 +69,9 @@ func (s *Service) ResolveShortLink(ctx context.Context, slug string) (string, er
 	if policy.IsExpired(link.ExpiresAt) {
 		return "", apperror.New(apperror.CodeExpired, "short link expired")
 	}
+	if err := s.recordAccessEvent(ctx, domain.ResourceShortLink, link.ID, "redirect"); err != nil {
+		return "", err
+	}
 	return link.TargetURL, nil
 }
 
@@ -273,4 +276,14 @@ func (s *Service) decorateShortLink(link domain.ShortLink) domain.ShortLink {
 		link.MappedURLs = nil
 	}
 	return link
+}
+
+func (s *Service) recordAccessEvent(ctx context.Context, resourceType domain.ResourceType, resourceID string, action string) error {
+	id, err := policy.RandomID()
+	if err != nil {
+		return err
+	}
+	return s.repo.RecordAccessEvent(ctx, domain.AccessEvent{
+		ID: id, ResourceType: resourceType, ResourceID: resourceID, Action: action,
+	})
 }

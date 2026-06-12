@@ -23,6 +23,15 @@ CREATE TABLE IF NOT EXISTS assets (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS access_events (
+  id TEXT PRIMARY KEY,
+  resource_type TEXT NOT NULL,
+  resource_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_short_links_slug ON short_links(slug);
 CREATE INDEX IF NOT EXISTS idx_assets_kind ON assets(kind);
 CREATE INDEX IF NOT EXISTS idx_assets_expires_at ON assets(expires_at);
+CREATE INDEX IF NOT EXISTS idx_access_events_resource ON access_events(resource_type, resource_id);

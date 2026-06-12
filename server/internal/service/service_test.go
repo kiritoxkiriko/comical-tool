@@ -78,6 +78,31 @@ func TestOpenFileAssetRequiresPasswordAndVisitLimit(t *testing.T) {
 	}
 }
 
+func TestResolveShortLinkRecordsAccessEvent(t *testing.T) {
+	svc := newTestService(t)
+	link, err := svc.CreateShortLink(context.Background(), "https://example.com", "tracked", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, err := svc.ResolveShortLink(context.Background(), "tracked")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target != "https://example.com" {
+		t.Fatalf("expected target URL, got %q", target)
+	}
+	events, err := svc.repo.ListAccessEvents(context.Background(), domain.ResourceShortLink, link.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("expected 1 access event, got %d", len(events))
+	}
+	if events[0].Action != "redirect" {
+		t.Fatalf("expected redirect event, got %+v", events[0])
+	}
+}
+
 func newTestService(t *testing.T) *Service {
 	t.Helper()
 	cfg, err := config.Load("")

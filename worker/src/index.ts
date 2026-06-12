@@ -74,13 +74,14 @@ async function revokeShort(url: URL, env: Env, meta: RequestMeta): Promise<Respo
 
 async function redirectShort(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const slug = url.pathname.split("/").filter(Boolean).pop() || "";
-  const row = await env.DB.prepare("SELECT target_url, expires_at, revoked_at FROM short_links WHERE slug = ?")
+  const row = await env.DB.prepare("SELECT id, target_url, expires_at, revoked_at FROM short_links WHERE slug = ?")
     .bind(slug)
     .first<ShortRow>();
   if (!row) return json({ error: "not_found", message: "short link not found" }, 404, meta);
   const policy = await policyWasm();
   if (row.revoked_at || expiredUnix(policy, row.expires_at))
     return json({ error: "expired", message: "short link unavailable" }, 410, meta);
+  await recordAccessEvent(env, "short_link", row.id, "redirect");
   const response = Response.redirect(row.target_url, 302);
   response.headers.set("x-request-id", meta.requestID);
   return response;
@@ -207,6 +208,14 @@ async function cleanExpired(env: Env): Promise<void> {
     .run();
 }
 
+async function recordAccessEvent(env: Env, resourceType: string, resourceID: string, action: string): Promise<void> {
+  await env.DB.prepare(
+    "INSERT INTO access_events (id, resource_type, resource_id, action, created_at) VALUES (?, ?, ?, ?, ?)"
+  )
+    .bind(crypto.randomUUID(), resourceType, resourceID, action, now())
+    .run();
+}
+
 async function adminCleanup(request: Request, env: Env, meta: RequestMeta): Promise<Response> {
   if (!adminAuthorized(request, env)) return json({ error: "unauthorized", message: "invalid admin token" }, 401, meta);
   await cleanExpired(env);
@@ -321,7 +330,7 @@ async function checkPassword(hash: string, password: string): Promise<boolean> {
 
 type ShortRequest = { target_url: string; custom_slug?: string; ttl?: string };
 type ClipRequest = { content: string; password?: string; max_visits?: number; ttl?: string };
-type ShortRow = { target_url: string; expires_at: number | null; revoked_at: number | null };
+type ShortRow = { id: string; target_url: string; expires_at: number | null; revoked_at: number | null };
 type AssetRow = {
   object_key: string;
   content_type: string;

@@ -1,6 +1,8 @@
 package client
 
 import (
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -62,5 +64,33 @@ func TestJSONFormatsEnvelopeError(t *testing.T) {
 	}
 	if got := err.Error(); got != "400 Bad Request: invalid (request_id: req-1)" {
 		t.Fatalf("unexpected error: %s", got)
+	}
+}
+
+func TestUploadSendsDetectedFileContentType(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "image.png")
+	if err := os.WriteFile(filePath, []byte("png"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, params, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		reader := multipart.NewReader(r.Body, params["boundary"])
+		part, err := reader.NextPart()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := part.Header.Get("Content-Type"); got != "image/png" {
+			t.Fatalf("expected image/png, got %q", got)
+		}
+		_, _ = w.Write([]byte(`{"data":{"id":"asset"}}`))
+	}))
+	defer server.Close()
+
+	client := New(server.URL, "")
+	if _, err := client.Upload("/api/images", filePath, nil); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -50,7 +52,7 @@ func (c *Client) Upload(path, filePath string, values map[string]string) ([]byte
 	defer func() {
 		_ = file.Close()
 	}()
-	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
+	part, err := createFilePart(writer, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +73,20 @@ func (c *Client) Upload(path, filePath string, values map[string]string) ([]byte
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	return c.do(req)
+}
+
+func createFilePart(writer *multipart.Writer, filePath string) (io.Writer, error) {
+	contentType := mime.TypeByExtension(strings.ToLower(filepath.Ext(filePath)))
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	header := make(textproto.MIMEHeader)
+	header.Set("Content-Disposition", mime.FormatMediaType("form-data", map[string]string{
+		"name":     "file",
+		"filename": filepath.Base(filePath),
+	}))
+	header.Set("Content-Type", contentType)
+	return writer.CreatePart(header)
 }
 
 func (c *Client) Get(path string, query url.Values) ([]byte, error) {

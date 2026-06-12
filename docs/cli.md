@@ -28,6 +28,10 @@ comical-cli image list
 comical-cli image delete <asset-id>
 ```
 
+Image uploads set the multipart file `Content-Type` from the local file
+extension, so common formats such as `.png`, `.jpg`, `.gif`, and `.webp` satisfy
+the image hosting MIME validation.
+
 ## Clipboard
 
 ```bash
@@ -50,4 +54,3 @@ comical-cli file delete <asset-id>
 ```bash
 comical-cli --token <admin-token> admin cleanup
 ```
-

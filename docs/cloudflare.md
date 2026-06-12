@@ -33,6 +33,9 @@ the user explicitly asks for deployment in the current turn.
 
 ```bash
 cd worker
+npm run build
+npm run test:api
+npm run test:wasm
 npm run dry-run
 ```
 

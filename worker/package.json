@@ -8,6 +8,7 @@
     "build:wasm": "node scripts/build-wasm.mjs",
     "lint": "biome check .",
     "format": "biome check --write .",
+    "test:api": "node scripts/test-api.mjs",
     "test:wasm": "npm run build:wasm && node scripts/test-policy-wasm.mjs",
     "deploy": "wrangler deploy",
     "dry-run": "wrangler deploy --dry-run",

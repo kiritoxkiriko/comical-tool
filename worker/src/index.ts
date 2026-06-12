@@ -12,22 +12,28 @@ export default {
     const meta = requestMeta(request);
     try {
       if (url.pathname === "/healthz" || url.pathname === "/api/health") return health(meta);
-      if (url.pathname === "/api/short-links" && request.method === "POST") return createShort(request, env, meta);
+      if (url.pathname === "/api/short-links" && request.method === "POST")
+        return await createShort(request, env, meta);
       if (url.pathname.startsWith("/api/short-links/") && url.pathname.endsWith("/revoke"))
-        return revokeShort(url, env, meta);
-      if (url.pathname.startsWith("/short/") && request.method === "GET") return redirectShort(url, env, meta);
-      if (url.pathname === "/api/clip" && request.method === "POST") return createClip(request, env, meta);
-      if (url.pathname.startsWith("/api/clip/") && request.method === "GET") return getClip(url, env, meta);
-      if (url.pathname.startsWith("/api/clip/") && request.method === "DELETE") return deleteClip(url, env, meta);
-      if (url.pathname === "/api/images" && request.method === "POST") return uploadAsset(request, env, "image", meta);
-      if (url.pathname === "/api/images" && request.method === "GET") return listAssets(env, "image", meta);
-      if (url.pathname.startsWith("/api/images/") && request.method === "DELETE") return deleteAsset(url, env, meta);
-      if (url.pathname === "/api/files" && request.method === "POST") return uploadAsset(request, env, "file", meta);
-      if (url.pathname === "/api/files" && request.method === "GET") return listAssets(env, "file", meta);
-      if (url.pathname.startsWith("/api/files/") && request.method === "DELETE") return deleteAsset(url, env, meta);
-      if (url.pathname.startsWith("/api/assets/") && request.method === "GET") return getAsset(url, env, meta);
-      if (url.pathname === "/api/admin/cleanup" && request.method === "POST") return adminCleanup(request, env, meta);
-      if (request.method === "GET" && url.pathname.length > 1) return redirectShort(url, env, meta);
+        return await revokeShort(url, env, meta);
+      if (url.pathname.startsWith("/short/") && request.method === "GET") return await redirectShort(url, env, meta);
+      if (url.pathname === "/api/clip" && request.method === "POST") return await createClip(request, env, meta);
+      if (url.pathname.startsWith("/api/clip/") && request.method === "GET") return await getClip(url, env, meta);
+      if (url.pathname.startsWith("/api/clip/") && request.method === "DELETE") return await deleteClip(url, env, meta);
+      if (url.pathname === "/api/images" && request.method === "POST")
+        return await uploadAsset(request, env, "image", meta);
+      if (url.pathname === "/api/images" && request.method === "GET") return await listAssets(env, "image", meta);
+      if (url.pathname.startsWith("/api/images/") && request.method === "DELETE")
+        return await deleteAsset(url, env, meta);
+      if (url.pathname === "/api/files" && request.method === "POST")
+        return await uploadAsset(request, env, "file", meta);
+      if (url.pathname === "/api/files" && request.method === "GET") return await listAssets(env, "file", meta);
+      if (url.pathname.startsWith("/api/files/") && request.method === "DELETE")
+        return await deleteAsset(url, env, meta);
+      if (url.pathname.startsWith("/api/assets/") && request.method === "GET") return await getAsset(url, env, meta);
+      if (url.pathname === "/api/admin/cleanup" && request.method === "POST")
+        return await adminCleanup(request, env, meta);
+      if (request.method === "GET" && url.pathname.length > 1) return await redirectShort(url, env, meta);
       return json({ error: "not_found", message: "route not found" }, 404, meta);
     } catch (error) {
       return json({ error: "internal", message: String(error) }, 500, meta);
@@ -49,9 +55,17 @@ async function createShort(request: Request, env: Env, meta: RequestMeta): Promi
   const expiresAt = expiryUnix(policy, body.ttl, defaultShortTTLSeconds);
   if (expiresAt === invalidExpiry) return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
   const slug = body.custom_slug || policy.randomSlug();
-  await env.DB.prepare("INSERT INTO short_links (id, slug, target_url, expires_at, created_at) VALUES (?, ?, ?, ?, ?)")
-    .bind(crypto.randomUUID(), slug, targetURL, expiresAt, now())
-    .run();
+  try {
+    await env.DB.prepare(
+      "INSERT INTO short_links (id, slug, target_url, expires_at, created_at) VALUES (?, ?, ?, ?, ?)"
+    )
+      .bind(crypto.randomUUID(), slug, targetURL, expiresAt, now())
+      .run();
+  } catch (error) {
+    if (isUniqueConstraintError(error))
+      return json({ error: "conflict", message: "short slug already exists" }, 409, meta);
+    throw error;
+  }
   return json(
     {
       slug,
@@ -295,6 +309,10 @@ function errorPayload(value: unknown, meta?: RequestMeta): { code: string; messa
     message: typeof record.message === "string" ? record.message : "request failed",
     request_id: meta?.requestID
   };
+}
+
+function isUniqueConstraintError(value: unknown): boolean {
+  return value instanceof Error && value.message.toLowerCase().includes("unique constraint");
 }
 
 function requestMeta(request: Request): RequestMeta {

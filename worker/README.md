@@ -6,6 +6,8 @@ Cloudflare Worker API adapter for `comical-tool`.
 npm install
 npm run cf-typegen
 npm run build
+npm run test:api
+npm run test:wasm
 npm run dry-run
 ```
 

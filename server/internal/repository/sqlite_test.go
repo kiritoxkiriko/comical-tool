@@ -34,6 +34,11 @@ func TestSQLiteClipboard(t *testing.T) {
 	testClipboard(t, repo, "sqlite")
 }
 
+func TestSQLiteAssetVisitCount(t *testing.T) {
+	repo := openTestRepo(t)
+	testAsset(t, repo, "sqlite")
+}
+
 func TestExternalDatabases(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -60,6 +65,7 @@ func TestExternalDatabases(t *testing.T) {
 			suffix := fmt.Sprintf("%s-%d", tt.name, time.Now().UnixNano())
 			testShortLink(t, repo, suffix)
 			testClipboard(t, repo, suffix)
+			testAsset(t, repo, suffix)
 		})
 	}
 }
@@ -99,6 +105,32 @@ func testClipboard(t *testing.T, repo *Store, suffix string) {
 	}
 	if got.VisitCount != 1 {
 		t.Fatalf("expected 1 visit, got %d", got.VisitCount)
+	}
+}
+
+func testAsset(t *testing.T, repo *Store, suffix string) {
+	t.Helper()
+	expires := time.Now().UTC().Add(time.Hour)
+	asset := domain.Asset{
+		ID: "asset-" + suffix, Kind: domain.ResourceFile, Name: "file.txt",
+		ContentType: "text/plain", Size: 5, ObjectKey: "file/asset-" + suffix,
+		PasswordHash: "hash", MaxVisits: 2, ExpiresAt: &expires,
+	}
+	if err := repo.CreateAsset(context.Background(), asset); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.IncrementAssetVisit(context.Background(), asset.ID); err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.FindAsset(context.Background(), asset.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.VisitCount != 1 {
+		t.Fatalf("expected 1 asset visit, got %d", got.VisitCount)
+	}
+	if got.MaxVisits != 2 || got.PasswordHash != "hash" {
+		t.Fatalf("asset access policy not persisted: %+v", got)
 	}
 }
 

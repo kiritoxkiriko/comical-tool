@@ -84,9 +84,19 @@ Storage config uses `[storage]`:
 comical-cli short create --url https://example.com
 comical-cli image upload --file ./image.png --link
 comical-cli clip put --content "hello" --ttl 1h
-comical-cli file upload --file ./archive.zip --ttl 168h
-comical-cli file download <asset-id> --output ./archive.zip
+comical-cli file upload --file ./archive.zip --ttl 168h --password open --max-visits 3
+comical-cli file download <asset-id> --password open --output ./archive.zip
 ```
+
+Detailed docs:
+
+- [Configuration](../configuration.md)
+- [API](../api.md)
+- [CLI](../cli.md)
+- [Docker](../docker.md)
+- [Migrations](../migrations.md)
+- [Storage Backends](../storage.md)
+- [Troubleshooting](../troubleshooting.md)
 
 ## Cloudflare
 

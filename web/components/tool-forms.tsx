@@ -94,15 +94,32 @@ function ClipForm({ meta, notify, setLoading }: FormProps) {
 
 function UploadForm({ kind, meta, notify, setLoading }: FormProps & { kind: "image" | "file" }) {
   const [ttl, setTTL] = useState(kind === "image" ? "720h" : "168h");
+  const [password, setPassword] = useState("");
+  const [maxVisits, setMaxVisits] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
   return (
-    <form onSubmit={(event) => upload(event, kind, ttl, file, notify, setLoading)} className="grid gap-5">
+    <form
+      onSubmit={(event) => upload(event, kind, ttl, password, maxVisits, file, notify, setLoading)}
+      className="grid gap-5"
+    >
       <SectionTitle title={meta.title} desc={meta.desc} />
       <Dropzone kind={kind} file={file} onFile={setFile} />
-      <Field label="过期时间">
-        <Input value={ttl} onChange={(event) => setTTL(event.target.value)} placeholder="过期时间" />
-      </Field>
+      <div className={kind === "file" ? "grid gap-4 sm:grid-cols-3" : "grid gap-4 sm:grid-cols-2"}>
+        <Field label="过期时间">
+          <Input value={ttl} onChange={(event) => setTTL(event.target.value)} placeholder="过期时间" />
+        </Field>
+        {kind === "file" && (
+          <>
+            <Field label="口令">
+              <Input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="可空" />
+            </Field>
+            <Field label="最多下载">
+              <Input value={maxVisits} onChange={(event) => setMaxVisits(event.target.value)} placeholder="不限" />
+            </Field>
+          </>
+        )}
+      </div>
       <SubmitButton>{kind === "image" ? "上传图片" : "上传文件"}</SubmitButton>
     </form>
   );
@@ -207,6 +224,8 @@ async function upload(
   event: FormEvent<HTMLFormElement>,
   kind: "image" | "file",
   ttl: string,
+  password: string,
+  maxVisits: string,
   file: File | null,
   notify: (message: Omit<ToastMessage, "id">) => void,
   setLoading: (value: boolean) => void
@@ -221,6 +240,10 @@ async function upload(
     data.set("file", file);
     data.set("ttl", ttl);
     data.set("link", "true");
+    if (kind === "file") {
+      data.set("password", password);
+      data.set("max_visits", maxVisits);
+    }
     const path = kind === "image" ? "/api/images" : "/api/files";
     const res = await fetch(apiBase + path, { method: "POST", body: data });
     return parseResponse(res);

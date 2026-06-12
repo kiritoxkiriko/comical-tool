@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"strconv"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -32,7 +34,7 @@ func (h *Handler) ListFiles(ctx context.Context, c *app.RequestContext) {
 }
 
 func (h *Handler) GetAsset(ctx context.Context, c *app.RequestContext) {
-	asset, body, err := h.svc.OpenAsset(ctx, c.Param("id"))
+	asset, body, err := h.svc.OpenAsset(ctx, c.Param("id"), c.Query("password"))
 	if err != nil {
 		writeError(c, err)
 		return
@@ -81,6 +83,29 @@ func (h *Handler) uploadAsset(
 		Name: file.Filename, ContentType: file.Header.Get("Content-Type"),
 		Size: file.Size, Body: body, TTL: ttl, Link: c.PostForm("link") == "true",
 	}
+	if kind == domain.ResourceFile {
+		up.Password = c.PostForm("password")
+		visits, err := parseOptionalInt(c.PostForm("max_visits"))
+		if err != nil {
+			writeError(c, apperror.New(apperror.CodeBadRequest, "invalid max_visits"))
+			return
+		}
+		up.MaxVisits = visits
+	}
 	asset, err := h.svc.UploadAsset(ctx, kind, up)
 	writeResult(c, asset, err)
+}
+
+func parseOptionalInt(value string) (int, error) {
+	if value == "" {
+		return 0, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, err
+	}
+	if parsed < 0 {
+		return 0, fmt.Errorf("negative value")
+	}
+	return parsed, nil
 }

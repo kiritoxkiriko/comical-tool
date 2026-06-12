@@ -44,7 +44,8 @@ self-hosted server can open SQLite, PostgreSQL, or MySQL through
 cd cli
 go run ./cmd/comical-cli short create --url https://example.com
 go run ./cmd/comical-cli clip put --content hello --link
-go run ./cmd/comical-cli file download <asset-id> --output ./download.bin
+go run ./cmd/comical-cli file upload --file ./secret.zip --password open --max-visits 3
+go run ./cmd/comical-cli file download <asset-id> --password open --output ./download.bin
 ```
 
 ## Short Link Domains
@@ -93,5 +94,8 @@ npm run dev
 Docs entry points:
 
 - `docs/guide/index.md` for quick start, APIs, CLI, and migrations.
+- `docs/api.md` and `docs/cli.md` for command-level API and CLI usage.
+- `docs/configuration.md`, `docs/docker.md`, `docs/migrations.md`, and
+  `docs/storage.md` for self-hosted operations.
 - `docs/cloudflare.md` for Cloudflare verification, explicit manual deployment,
   and runtime differences.

@@ -130,19 +130,30 @@ async function uploadAsset(request: Request, env: Env, kind: string, meta: Reque
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return json({ error: "bad_request", message: "file is required" }, 400, meta);
-  const id = crypto.randomUUID();
-  const key = `${kind}/${id}`;
-  await env.BUCKET.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
   const policy = await policyWasm();
   const expiresAt = expiryUnix(policy, String(form.get("ttl") || ""), defaultAssetTTLSeconds(kind));
   if (expiresAt === invalidExpiry) return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
+  const maxVisits = kind === "file" ? parseMaxVisits(form.get("max_visits")) : 0;
+  if (maxVisits < 0) return json({ error: "bad_request", message: "invalid max_visits" }, 400, meta);
+  const passwordHash = kind === "file" ? await hashPassword(String(form.get("password") || "")) : "";
+  const id = crypto.randomUUID();
+  const key = `${kind}/${id}`;
+  await env.BUCKET.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
   await env.DB.prepare(
-    "INSERT INTO assets (id, kind, name, content_type, size, object_key, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO assets (id, kind, name, content_type, size, object_key, password_hash, max_visits, visit_count, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   )
-    .bind(id, kind, file.name, file.type, file.size, key, expiresAt, now())
+    .bind(id, kind, file.name, file.type, file.size, key, passwordHash, maxVisits, 0, expiresAt, now())
     .run();
   return json(
-    { id, kind, name: file.name, content_type: file.type, size: file.size, expires_at: expiresAt },
+    {
+      id,
+      kind,
+      name: file.name,
+      content_type: file.type,
+      size: file.size,
+      max_visits: maxVisits,
+      expires_at: expiresAt
+    },
     200,
     meta
   );
@@ -150,21 +161,28 @@ async function uploadAsset(request: Request, env: Env, kind: string, meta: Reque
 
 async function getAsset(url: URL, env: Env, meta: RequestMeta): Promise<Response> {
   const id = url.pathname.split("/").pop();
-  const row = await env.DB.prepare("SELECT object_key, content_type, expires_at, deleted_at FROM assets WHERE id = ?")
+  const row = await env.DB.prepare(
+    "SELECT object_key, content_type, expires_at, deleted_at, password_hash, max_visits, visit_count FROM assets WHERE id = ?"
+  )
     .bind(id)
     .first<AssetRow>();
   if (!row) return json({ error: "not_found", message: "asset not found" }, 404, meta);
   const policy = await policyWasm();
   if (row.deleted_at || expiredUnix(policy, row.expires_at))
     return json({ error: "expired", message: "asset unavailable" }, 410, meta);
+  if (policy.visitLimitExceeded(row.max_visits, row.visit_count))
+    return json({ error: "expired", message: "asset exhausted" }, 410, meta);
+  if (!(await checkPassword(row.password_hash, url.searchParams.get("password") || "")))
+    return json({ error: "forbidden", message: "invalid password" }, 403, meta);
   const object = await env.BUCKET.get(row.object_key);
   if (!object) return json({ error: "not_found", message: "object not found" }, 404, meta);
+  await env.DB.prepare("UPDATE assets SET visit_count = visit_count + 1 WHERE id = ?").bind(id).run();
   return new Response(object.body, { headers: { "content-type": row.content_type, "x-request-id": meta.requestID } });
 }
 
 async function listAssets(env: Env, kind: string, meta: RequestMeta): Promise<Response> {
   const result = await env.DB.prepare(
-    "SELECT id, kind, name, content_type, size, short_slug, expires_at, created_at FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC"
+    "SELECT id, kind, name, content_type, size, short_slug, max_visits, visit_count, expires_at, created_at FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC"
   )
     .bind(kind)
     .all();
@@ -253,6 +271,12 @@ function defaultAssetTTLSeconds(kind: string): number {
   return kind === "image" ? defaultImageTTLSeconds : defaultFileTTLSeconds;
 }
 
+function parseMaxVisits(value: unknown): number {
+  if (value === null || value === "") return 0;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isNaN(parsed) ? -1 : parsed;
+}
+
 function now(): number {
   return Math.floor(Date.now() / 1000);
 }
@@ -298,7 +322,15 @@ async function checkPassword(hash: string, password: string): Promise<boolean> {
 type ShortRequest = { target_url: string; custom_slug?: string; ttl?: string };
 type ClipRequest = { content: string; password?: string; max_visits?: number; ttl?: string };
 type ShortRow = { target_url: string; expires_at: number | null; revoked_at: number | null };
-type AssetRow = { object_key: string; content_type: string; expires_at: number | null; deleted_at: number | null };
+type AssetRow = {
+  object_key: string;
+  content_type: string;
+  expires_at: number | null;
+  deleted_at: number | null;
+  password_hash: string;
+  max_visits: number;
+  visit_count: number;
+};
 type RequestMeta = { requestID: string };
 type PolicyWasm = Awaited<ReturnType<typeof policyWasm>>;
 type ClipItem = {

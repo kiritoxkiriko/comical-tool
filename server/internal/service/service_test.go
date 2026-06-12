@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
@@ -39,6 +40,41 @@ func TestUploadAssetAllowsFileWithinModuleLimit(t *testing.T) {
 	}
 	if asset.Size != 5 {
 		t.Fatalf("expected stored size 5, got %d", asset.Size)
+	}
+}
+
+func TestOpenFileAssetRequiresPasswordAndVisitLimit(t *testing.T) {
+	svc := newTestService(t)
+	up := Upload{
+		Name: "secret.txt", ContentType: "text/plain", Size: 6,
+		Body: strings.NewReader("secret"), Password: "open", MaxVisits: 1,
+	}
+	asset, err := svc.UploadAsset(context.Background(), domain.ResourceFile, up)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := svc.OpenAsset(context.Background(), asset.ID, "wrong"); !hasAppCode(err, apperror.CodeForbidden) {
+		t.Fatalf("expected forbidden, got %v", err)
+	}
+	opened, body, err := svc.OpenAsset(context.Background(), asset.ID, "open")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = body.Close()
+	}()
+	data, err := io.ReadAll(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "secret" {
+		t.Fatalf("expected stored body, got %q", data)
+	}
+	if opened.VisitCount != 1 {
+		t.Fatalf("expected visit count 1, got %d", opened.VisitCount)
+	}
+	if _, _, err := svc.OpenAsset(context.Background(), asset.ID, "open"); !hasAppCode(err, apperror.CodeExpired) {
+		t.Fatalf("expected exhausted asset, got %v", err)
 	}
 }
 

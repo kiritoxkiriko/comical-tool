@@ -26,16 +26,19 @@ type ShortLink struct {
 }
 
 type Asset struct {
-	ID          string       `json:"id"`
-	Kind        ResourceType `json:"kind"`
-	Name        string       `json:"name"`
-	ContentType string       `json:"content_type"`
-	Size        int64        `json:"size"`
-	ObjectKey   string       `json:"object_key"`
-	ShortSlug   string       `json:"short_slug,omitempty"`
-	ExpiresAt   *time.Time   `json:"expires_at,omitempty"`
-	DeletedAt   *time.Time   `json:"deleted_at,omitempty"`
-	CreatedAt   time.Time    `json:"created_at"`
+	ID           string       `json:"id"`
+	Kind         ResourceType `json:"kind"`
+	Name         string       `json:"name"`
+	ContentType  string       `json:"content_type"`
+	Size         int64        `json:"size"`
+	ObjectKey    string       `json:"object_key"`
+	ShortSlug    string       `json:"short_slug,omitempty"`
+	MaxVisits    int          `json:"max_visits"`
+	VisitCount   int          `json:"visit_count"`
+	PasswordHash string       `json:"-"`
+	ExpiresAt    *time.Time   `json:"expires_at,omitempty"`
+	DeletedAt    *time.Time   `json:"deleted_at,omitempty"`
+	CreatedAt    time.Time    `json:"created_at"`
 }
 
 type ClipboardItem struct {

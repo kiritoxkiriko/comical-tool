@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS assets (
   size INTEGER NOT NULL,
   object_key TEXT NOT NULL,
   short_slug TEXT,
+  password_hash TEXT NOT NULL DEFAULT '',
+  max_visits INTEGER NOT NULL DEFAULT 0,
+  visit_count INTEGER NOT NULL DEFAULT 0,
   expires_at INTEGER,
   deleted_at INTEGER,
   created_at INTEGER NOT NULL

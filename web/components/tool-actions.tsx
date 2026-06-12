@@ -78,10 +78,19 @@ function ClipActions({ notify, setLoading }: ActionProps) {
 
 function AssetActions({ kind, notify, setLoading }: ActionProps & { kind: "image" | "file" }) {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [password, setPassword] = useState("");
 
   return (
-    <ActionShell title={kind === "image" ? "图片列表" : "文件列表"} desc="查看最近资源，打开、复制短链或删除。">
-      <div className="flex justify-end">
+    <ActionShell
+      title={kind === "image" ? "图片列表" : "文件列表"}
+      desc={kind === "image" ? "查看最近图片，打开、复制短链或删除。" : "查看最近文件，输入口令后打开或删除。"}
+    >
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+        {kind === "file" ? (
+          <Input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="文件口令，可空" />
+        ) : (
+          <span />
+        )}
         <Button type="button" variant="outline" onClick={() => loadAssets(kind, notify, setLoading, setAssets)}>
           <RefreshCcw className="h-4 w-4" />
           刷新
@@ -101,7 +110,7 @@ function AssetActions({ kind, notify, setLoading }: ActionProps & { kind: "image
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild variant="ghost" size="icon" title="打开资源">
-                  <a href={`${apiBase}/api/assets/${asset.id}`} target="_blank" rel="noopener">
+                  <a href={assetURL(asset.id, kind, password)} target="_blank" rel="noopener">
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 </Button>
@@ -131,6 +140,12 @@ function AssetActions({ kind, notify, setLoading }: ActionProps & { kind: "image
       </div>
     </ActionShell>
   );
+}
+
+function assetURL(id: string, kind: "image" | "file", password: string) {
+  const url = `${apiBase}/api/assets/${encodeURIComponent(id)}`;
+  if (kind !== "file" || !password) return url;
+  return `${url}?${new URLSearchParams({ password }).toString()}`;
 }
 
 function ActionShell({ title, desc, children }: { title: string; desc: string; children: React.ReactNode }) {

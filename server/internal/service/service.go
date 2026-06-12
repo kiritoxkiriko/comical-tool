@@ -30,6 +30,8 @@ type Upload struct {
 	Body        io.Reader
 	TTL         time.Duration
 	Link        bool
+	Password    string
+	MaxVisits   int
 }
 
 func New(cfg config.Config, repo *repository.Store, store storage.Store) *Service {
@@ -167,7 +169,7 @@ func (s *Service) ListAssets(ctx context.Context, kind domain.ResourceType) ([]d
 	return s.repo.ListAssets(ctx, kind)
 }
 
-func (s *Service) OpenAsset(ctx context.Context, id string) (domain.Asset, io.ReadCloser, error) {
+func (s *Service) OpenAsset(ctx context.Context, id string, password string) (domain.Asset, io.ReadCloser, error) {
 	asset, err := s.repo.FindAsset(ctx, id)
 	if errors.Is(err, repository.ErrNotFound) {
 		return domain.Asset{}, nil, apperror.New(apperror.CodeNotFound, "asset not found")
@@ -178,7 +180,21 @@ func (s *Service) OpenAsset(ctx context.Context, id string) (domain.Asset, io.Re
 	if asset.DeletedAt != nil || policy.IsExpired(asset.ExpiresAt) {
 		return domain.Asset{}, nil, apperror.New(apperror.CodeExpired, "asset expired")
 	}
+	if policy.VisitLimitExceeded(asset.MaxVisits, asset.VisitCount) {
+		return domain.Asset{}, nil, apperror.New(apperror.CodeExpired, "asset exhausted")
+	}
+	if !policy.CheckPassword(asset.PasswordHash, password) {
+		return domain.Asset{}, nil, apperror.New(apperror.CodeForbidden, "invalid password")
+	}
 	body, err := s.store.Open(ctx, asset.ObjectKey)
+	if err != nil {
+		return domain.Asset{}, nil, err
+	}
+	if err := s.repo.IncrementAssetVisit(ctx, id); err != nil {
+		_ = body.Close()
+		return domain.Asset{}, nil, err
+	}
+	asset.VisitCount++
 	return asset, body, err
 }
 
@@ -206,9 +222,14 @@ func (s *Service) newAsset(ctx context.Context, kind domain.ResourceType, up Upl
 	if err != nil {
 		return domain.Asset{}, err
 	}
+	hash, err := policy.HashPassword(up.Password)
+	if err != nil {
+		return domain.Asset{}, err
+	}
 	asset := domain.Asset{
 		ID: id, Kind: kind, Name: up.Name, ContentType: up.ContentType,
 		Size: up.Size, ObjectKey: string(kind) + "/" + id,
+		PasswordHash: hash, MaxVisits: up.MaxVisits,
 		ExpiresAt: policy.ExpiryFromDuration(up.TTL),
 	}
 	if up.Link {

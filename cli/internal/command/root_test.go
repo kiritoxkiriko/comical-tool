@@ -31,3 +31,23 @@ func TestFileCommandContainsDownload(t *testing.T) {
 		}
 	}
 }
+
+func TestFileCommandAccessPolicyFlags(t *testing.T) {
+	cmd := NewRoot()
+	uploadCmd, _, err := cmd.Find([]string{"file", "upload"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"password", "max-visits"} {
+		if uploadCmd.Flags().Lookup(name) == nil {
+			t.Fatalf("expected file upload --%s flag", name)
+		}
+	}
+	downloadCmd, _, err := cmd.Find([]string{"file", "download"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if downloadCmd.Flags().Lookup("password") == nil {
+		t.Fatal("expected file download --password flag")
+	}
+}

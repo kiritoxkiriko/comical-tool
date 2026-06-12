@@ -8,26 +8,29 @@ import (
 )
 
 type assetRow struct {
-	ID          string         `db:"id"`
-	Kind        string         `db:"kind"`
-	Name        string         `db:"name"`
-	ContentType string         `db:"content_type"`
-	Size        int64          `db:"size"`
-	ObjectKey   string         `db:"object_key"`
-	ShortSlug   sql.NullString `db:"short_slug"`
-	ExpiresAt   dbTime         `db:"expires_at"`
-	DeletedAt   dbTime         `db:"deleted_at"`
-	CreatedAt   dbTime         `db:"created_at"`
+	ID           string         `db:"id"`
+	Kind         string         `db:"kind"`
+	Name         string         `db:"name"`
+	ContentType  string         `db:"content_type"`
+	Size         int64          `db:"size"`
+	ObjectKey    string         `db:"object_key"`
+	ShortSlug    sql.NullString `db:"short_slug"`
+	PasswordHash string         `db:"password_hash"`
+	MaxVisits    int            `db:"max_visits"`
+	VisitCount   int            `db:"visit_count"`
+	ExpiresAt    dbTime         `db:"expires_at"`
+	DeletedAt    dbTime         `db:"deleted_at"`
+	CreatedAt    dbTime         `db:"created_at"`
 }
 
 func (s *Store) CreateAsset(ctx context.Context, asset domain.Asset) error {
 	now := s.nowArg()
 	_, err := s.exec(ctx, `
 INSERT INTO assets
-(id, owner_id, kind, name, content_type, size, object_key, short_slug, expires_at, deleted_at, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+(id, owner_id, kind, name, content_type, size, object_key, short_slug, password_hash, max_visits, visit_count, expires_at, deleted_at, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		asset.ID, domain.GuestUserID, asset.Kind, asset.Name, asset.ContentType,
-		asset.Size, asset.ObjectKey, nullString(asset.ShortSlug),
+		asset.Size, asset.ObjectKey, nullString(asset.ShortSlug), asset.PasswordHash, asset.MaxVisits, asset.VisitCount,
 		s.timeArg(nullableTime(asset.ExpiresAt)), s.timeArg(nullableTime(asset.DeletedAt)), now, now)
 	return err
 }
@@ -35,7 +38,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 func (s *Store) ListAssets(ctx context.Context, kind domain.ResourceType) ([]domain.Asset, error) {
 	rows := []assetRow{}
 	err := s.selectRows(ctx, &rows, `
-SELECT id, kind, name, content_type, size, object_key, short_slug, expires_at, deleted_at, created_at
+SELECT id, kind, name, content_type, size, object_key, short_slug, password_hash, max_visits, visit_count, expires_at, deleted_at, created_at
 FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC`, kind)
 	if err != nil {
 		return nil, err
@@ -50,7 +53,7 @@ FROM assets WHERE kind = ? AND deleted_at IS NULL ORDER BY created_at DESC`, kin
 func (s *Store) FindAsset(ctx context.Context, id string) (domain.Asset, error) {
 	var row assetRow
 	err := s.get(ctx, &row, `
-SELECT id, kind, name, content_type, size, object_key, short_slug, expires_at, deleted_at, created_at
+SELECT id, kind, name, content_type, size, object_key, short_slug, password_hash, max_visits, visit_count, expires_at, deleted_at, created_at
 FROM assets WHERE id = ?`, id)
 	if err == sql.ErrNoRows {
 		return domain.Asset{}, ErrNotFound
@@ -79,6 +82,11 @@ UPDATE assets SET deleted_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS 
 	return nil
 }
 
+func (s *Store) IncrementAssetVisit(ctx context.Context, id string) error {
+	_, err := s.exec(ctx, "UPDATE assets SET visit_count = visit_count + 1, updated_at = ? WHERE id = ?", s.nowArg(), id)
+	return err
+}
+
 func nullString(value string) any {
 	if value == "" {
 		return nil
@@ -88,15 +96,18 @@ func nullString(value string) any {
 
 func (r assetRow) toDomain() domain.Asset {
 	return domain.Asset{
-		ID:          r.ID,
-		Kind:        domain.ResourceType(r.Kind),
-		Name:        r.Name,
-		ContentType: r.ContentType,
-		Size:        r.Size,
-		ObjectKey:   r.ObjectKey,
-		ShortSlug:   r.ShortSlug.String,
-		ExpiresAt:   parseNullableTime(r.ExpiresAt),
-		DeletedAt:   parseNullableTime(r.DeletedAt),
-		CreatedAt:   parseTime(r.CreatedAt),
+		ID:           r.ID,
+		Kind:         domain.ResourceType(r.Kind),
+		Name:         r.Name,
+		ContentType:  r.ContentType,
+		Size:         r.Size,
+		ObjectKey:    r.ObjectKey,
+		ShortSlug:    r.ShortSlug.String,
+		PasswordHash: r.PasswordHash,
+		MaxVisits:    r.MaxVisits,
+		VisitCount:   r.VisitCount,
+		ExpiresAt:    parseNullableTime(r.ExpiresAt),
+		DeletedAt:    parseNullableTime(r.DeletedAt),
+		CreatedAt:    parseTime(r.CreatedAt),
 	}
 }

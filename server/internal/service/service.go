@@ -155,6 +155,9 @@ func (s *Service) UploadAsset(ctx context.Context, kind domain.ResourceType, up 
 	if limit := s.maxAssetBytes(kind); limit > 0 && up.Size > limit {
 		return domain.Asset{}, apperror.New(apperror.CodeBadRequest, "upload exceeds max bytes")
 	}
+	if kind == domain.ResourceImage && !strings.HasPrefix(strings.ToLower(up.ContentType), "image/") {
+		return domain.Asset{}, apperror.New(apperror.CodeBadRequest, "invalid image mime")
+	}
 	asset, err := s.newAsset(ctx, kind, up)
 	if err != nil {
 		return domain.Asset{}, err

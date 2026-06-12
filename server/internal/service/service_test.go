@@ -27,6 +27,18 @@ func TestUploadAssetRejectsImageOverModuleLimit(t *testing.T) {
 	}
 }
 
+func TestUploadAssetRejectsNonImageMimeForImages(t *testing.T) {
+	svc := newTestService(t)
+	up := Upload{
+		Name: "not-image.txt", ContentType: "text/plain", Size: 5,
+		Body: strings.NewReader("hello"),
+	}
+	_, err := svc.UploadAsset(context.Background(), domain.ResourceImage, up)
+	if !hasAppCode(err, apperror.CodeBadRequest) {
+		t.Fatalf("expected bad_request, got %v", err)
+	}
+}
+
 func TestUploadAssetAllowsFileWithinModuleLimit(t *testing.T) {
 	svc := newTestService(t)
 	svc.cfg.Modules.FileStash.MaxBytes = 6

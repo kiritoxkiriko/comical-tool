@@ -37,6 +37,11 @@ comical-cli file download <asset-id> --password open --output ./file.bin
 
 The resource is expired, revoked, deleted, or has reached its visit limit.
 
+## Image Upload Returns 400
+
+The image hosting endpoint only accepts multipart files with an `image/*` MIME
+type and enforces `modules.image_hosting.max_bytes`.
+
 ## Cloudflare Deployment
 
 GitHub Actions deployment is disabled. Do not run `wrangler deploy` unless the
@@ -46,4 +51,3 @@ current task explicitly asks for a manual deployment. Use:
 make worker-dry-run
 make web-build
 ```
-

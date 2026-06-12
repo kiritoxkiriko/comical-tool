@@ -54,6 +54,9 @@ Routes:
 - `GET /api/assets/{id}`
 - `DELETE /api/images/{id}`
 
+Image uploads must send an `image/*` MIME type and stay within
+`modules.image_hosting.max_bytes`.
+
 When `link=true` is sent, the API creates a short link and records the
 association in `resource_links`.
 

@@ -134,6 +134,8 @@ async function uploadAsset(request: Request, env: Env, kind: string, meta: Reque
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return json({ error: "bad_request", message: "file is required" }, 400, meta);
+  if (kind === "image" && !file.type.toLowerCase().startsWith("image/"))
+    return json({ error: "bad_request", message: "invalid image mime" }, 400, meta);
   const policy = await policyWasm();
   const expiresAt = expiryUnix(policy, String(form.get("ttl") || ""), defaultAssetTTLSeconds(kind));
   if (expiresAt === invalidExpiry) return json({ error: "bad_request", message: "invalid ttl" }, 400, meta);
